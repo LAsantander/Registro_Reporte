@@ -10,6 +10,7 @@ import com.example.registro.ui.theme.RegistroTheme // Importación del tema de l
 
 import androidx.compose.material3.* // Importación de componentes de Material Design 3
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
@@ -20,13 +21,18 @@ import androidx.compose.ui.text.input.KeyboardType // Importación para definir 
 import androidx.compose.ui.text.style.TextAlign // Importación para alinear texto
 
 import com.example.registro.ui.UnitViewModel
+import com.example.registro.ui.utils.PrintUtils
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class) // Anotación para usar APIs experimentales de Material 3
 @Composable // Define que esta función es un componente de la interfaz de usuario
 fun TemperatureTakingScreen(
     viewModel: UnitViewModel? = null,
-    onNavigateToRegistry: () -> Unit = {}
+    onBackClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     // Estado para la barra de búsqueda superior
     var searchQuery by remember { mutableStateOf("") }
     // Estado para almacenar el valor del ID del vehículo o placa
@@ -40,20 +46,41 @@ fun TemperatureTakingScreen(
     // Estado para almacenar los comentarios adicionales
     var comments by remember { mutableStateOf("") }
 
-    // Observar el mensaje de error del ViewModel
+    // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+    val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
 
     // Mostrar Alerta si hay un error
     if (errorMessage != null) {
         AlertDialog(
-            onDismissRequest = { viewModel?.clearError() },
+            onDismissRequest = { viewModel?.clearMessages() },
             title = { Text("Aviso") },
             text = { Text(errorMessage!!) },
             confirmButton = {
-                TextButton(onClick = { viewModel?.clearError() }) {
+                TextButton(onClick = { viewModel?.clearMessages() }) {
                     Text("Entendido")
                 }
-            }
+            },
+            containerColor = Color(0xFFB71C1C), // Rojo para errores
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
+
+    // Mostrar Alerta si el registro fue exitoso
+    if (successMessage != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel?.clearMessages() },
+            title = { Text("Éxito") },
+            text = { Text(successMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { viewModel?.clearMessages() }) {
+                    Text("Aceptar")
+                }
+            },
+            containerColor = Color(0xFF1B5E20), // Verde para éxito
+            titleContentColor = Color.White,
+            textContentColor = Color.White
         )
     }
 
@@ -75,12 +102,26 @@ fun TemperatureTakingScreen(
             .background(Color(0xFF052A50)), // Aplicamos el color de fondo azul oscuro
         contentAlignment = Alignment.TopCenter // Alineamos al tope superior para poder posicionar los elementos más arriba
     ) {
+        // Botón de retroceso en la parte superior izquierda
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Regresar",
+                tint = Color.White
+            )
+        }
+
         // Columna para organizar los elementos de entrada uno debajo del otro
         Column(
             modifier = Modifier // Aplicamos modificadores a la columna
                 .fillMaxWidth() // La columna ocupará todo el ancho disponible
                 .padding(horizontal = 32.dp) // Aplicamos un margen lateral de 32dp
-                .padding(top = 40.dp), // Reducido para dar espacio a la barra de búsqueda
+                .padding(top = 64.dp), // Aumentado para dar espacio a la flecha de retroceso
             verticalArrangement = Arrangement.spacedBy(16.dp), // Reducido un poco para que quepan todos los campos
             horizontalAlignment = Alignment.CenterHorizontally // Centramos los elementos horizontalmente
         ) {
@@ -249,34 +290,23 @@ fun TemperatureTakingScreen(
                 Text(text = "GUARDAR", style = MaterialTheme.typography.titleMedium)
             }
 
-            // Botón IMPRIMIR
+            // Botón IMPRIMIR (Reporte del día)
             Button(
-                onClick ={ /* Lógica de impresión */ },
+                onClick ={
+                    coroutineScope.launch {
+                        val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
+                        PrintUtils.imprimirReporteDelDia(context, registros)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(0.4f).height(46.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF52A8EE),
                     contentColor = Color.White,
                     disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
                     disabledContentColor = Color.White.copy(alpha = 0.5f)
-                ),
-                enabled = vehicleId.isNotBlank() && numeroUnidad.isNotBlank() && temp1.isNotBlank() && temp2.isNotBlank()
+                )
             ) {
                 Text(text = "IMPRIMIR", style = MaterialTheme.typography.titleMedium)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Botón para ir a REGISTRO
-            OutlinedButton(
-                onClick = onNavigateToRegistry,
-                modifier = Modifier.fillMaxWidth(0.6f),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
-            ) {
-                Text(
-                    text = "IR A REGISTRO DE UNIDAD",
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }
@@ -290,7 +320,7 @@ fun TemperatureTakingScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            TemperatureTakingScreen(onNavigateToRegistry = {})
+            TemperatureTakingScreen(onBackClick = {})
         }
     }
 }

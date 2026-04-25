@@ -7,6 +7,9 @@ import com.example.registro.data.UnitEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * El ViewModel es el encargado de gestionar los datos para la interfaz de usuario.
@@ -17,6 +20,10 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     // Estado para manejar mensajes de error/alerta en la UI
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
+
+    // Estado para manejar mensajes de éxito
+    private val _successMessage = MutableStateFlow<String?>(null)
+    val successMessage: StateFlow<String?> = _successMessage
 
     /**
      * Función para insertar una nueva unidad con validación de duplicados.
@@ -29,8 +36,9 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
         serie: String,
         onSuccess: () -> Unit
     ) {
-        // Limpiamos errores previos
+        // Limpiamos mensajes previos
         _errorMessage.value = null
+        _successMessage.value = null
 
         // Validación básica
         if (placa.isBlank() || numeroUnidad.isBlank() || marca.isBlank()) {
@@ -48,6 +56,7 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
                     serie = serie
                 )
                 unitDao.insertUnit(nuevaUnidad)
+                _successMessage.value = "Unidad registrada correctamente."
                 onSuccess() // Si todo sale bien
             } catch (e: Exception) {
                 // Si Room lanza un error (como una violación de unicidad)
@@ -75,6 +84,7 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
         onSuccess: () -> Unit
     ) {
         _errorMessage.value = null
+        _successMessage.value = null
         
         if (placa.isBlank() || numeroUnidad.isBlank() || temp1.isBlank() || temp2.isBlank()) {
             _errorMessage.value = "Por favor completa todos los campos de temperatura."
@@ -91,11 +101,28 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
                     comentarios = comentarios
                 )
                 unitDao.insertTemperature(registro)
+                _successMessage.value = "Toma de temperatura guardada con éxito."
                 onSuccess()
             } catch (e: Exception) {
                 _errorMessage.value = "Error al guardar la temperatura: ${e.message}"
             }
         }
+    }
+
+    /**
+     * Obtiene los registros de temperatura del día actual.
+     */
+    suspend fun obtenerRegistrosDelDia(): List<com.example.registro.data.TemperatureEntity> {
+        val hoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        return unitDao.getTemperaturesByDate(hoy)
+    }
+
+    /**
+     * Limpia los mensajes para cerrar las alertas.
+     */
+    fun clearMessages() {
+        _errorMessage.value = null
+        _successMessage.value = null
     }
 
     /**

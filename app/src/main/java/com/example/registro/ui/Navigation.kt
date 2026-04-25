@@ -39,7 +39,7 @@ fun AppNavigation() {
         composable("temperature") {
             TemperatureTakingScreen(
                 viewModel = viewModel,
-                onNavigateToRegistry = { navController.navigate("registry") }
+                onBackClick = { navController.popBackStack() }
             )
         }
 

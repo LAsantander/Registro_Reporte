@@ -30,4 +30,7 @@ interface UnitDao {
     // --- Operaciones para Toma de Temperatura ---
     @Insert
     suspend fun insertTemperature(record: TemperatureEntity)
+
+    @Query("SELECT * FROM temperature_records WHERE fechaHora LIKE :todayDate || '%' ORDER BY id DESC")
+    suspend fun getTemperaturesByDate(todayDate: String): List<TemperatureEntity>
 }

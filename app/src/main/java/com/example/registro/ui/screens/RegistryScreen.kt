@@ -34,21 +34,39 @@ fun RegistryScreen(viewModel: UnitViewModel? = null) {
     var expanded by remember { mutableStateOf(false) }
     val opcionesMarcas = listOf("Thermo King", "Carrier")
 
-    // Observar el mensaje de error del ViewModel
+    // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+    val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
 
-    // Mostrar Alerta si hay un error (ej. Placa duplicada)
+    // Mostrar Alerta si hay un error
     if (errorMessage != null) {
         AlertDialog(
-            onDismissRequest = { viewModel?.clearError() },
-            title = { Text("Aviso de Registro") },
+            onDismissRequest = { viewModel?.clearMessages() },
+            title = { Text("Error de Registro") },
             text = { Text(errorMessage!!) },
             confirmButton = {
-                TextButton(onClick = { viewModel?.clearError() }) {
+                TextButton(onClick = { viewModel?.clearMessages() }) {
                     Text("Entendido")
                 }
             },
-            containerColor = Color(0xFF0D47A1), // Azul profundo para la alerta
+            containerColor = Color(0xFFB71C1C), // Rojo para errores
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
+
+    // Mostrar Alerta si el registro fue exitoso
+    if (successMessage != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel?.clearMessages() },
+            title = { Text("Éxito") },
+            text = { Text(successMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { viewModel?.clearMessages() }) {
+                    Text("Aceptar")
+                }
+            },
+            containerColor = Color(0xFF1B5E20), // Verde para éxito
             titleContentColor = Color.White,
             textContentColor = Color.White
         )
