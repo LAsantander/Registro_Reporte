@@ -40,6 +40,10 @@ android {
     }
 }
 
+ksp {
+    arg("ksp.useK2", "false")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

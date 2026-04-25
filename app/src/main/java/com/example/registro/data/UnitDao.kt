@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface UnitDao {
-    // Inserta una nueva unidad. Si la placa ya existe, la reemplaza.
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // Inserta una nueva unidad. Lanza una excepción si la placa o número de unidad ya existen.
+    @Insert
     suspend fun insertUnit(unit: UnitEntity)
 
     // Obtiene todas las unidades registradas, ordenadas por placa.
@@ -22,4 +22,12 @@ interface UnitDao {
     // Busca unidades que coincidan con la placa (para la Vista 1: Búsqueda)
     @Query("SELECT * FROM refrigerated_units WHERE placa LIKE :searchQuery")
     fun searchByPlaca(searchQuery: String): Flow<List<UnitEntity>>
+
+    // Busca una unidad específica por placa o número de unidad (coincidencia exacta)
+    @Query("SELECT * FROM refrigerated_units WHERE placa = :query OR numeroUnidad = :query LIMIT 1")
+    suspend fun findUnitByPlacaOrId(query: String): UnitEntity?
+
+    // --- Operaciones para Toma de Temperatura ---
+    @Insert
+    suspend fun insertTemperature(record: TemperatureEntity)
 }

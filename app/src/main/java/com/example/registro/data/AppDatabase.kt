@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase
  * Clase principal de la base de datos Room.
  * Define la versión y las entidades que contiene.
  */
-@Database(entities = [UnitEntity::class], version = 1, exportSchema = false)
+@Database(entities = [UnitEntity::class, TemperatureEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     // Define el acceso al DAO
@@ -27,8 +27,10 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "registro_database" // Nombre del archivo de la DB
-                ).build()
+                    "registro_database"
+                )
+                .fallbackToDestructiveMigration() // Permite actualizar la tabla borrando datos viejos si cambia la versión
+                .build()
                 INSTANCE = instance
                 instance
             }

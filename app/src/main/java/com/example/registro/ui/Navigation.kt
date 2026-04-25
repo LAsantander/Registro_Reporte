@@ -1,71 +1,69 @@
 package com.example.registro.ui
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.registro.model.RefrigeratedUnit
-import com.example.registro.ui.screens.AddUnitScreen
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.registro.data.AppDatabase
+import com.example.registro.ui.screens.CheckListScreen
+import com.example.registro.ui.screens.RegistryScreen
 import com.example.registro.ui.screens.SearchScreen
-import com.example.registro.ui.screens.UnitDetailScreen
-import com.example.registro.ui.screens.UnitListScreen
-import java.util.UUID
+import com.example.registro.ui.screens.TemperatureTakingScreen
+import com.example.registro.ui.theme.RegistroTheme
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
     
-    // Mock data for demonstration
-    var units by remember { 
-        mutableStateOf(
-            listOf(
-                RefrigeratedUnit("1", "ABC-123", 4.5, "Activo", "2023-10-27 10:00"),
-                RefrigeratedUnit("2", "XYZ-789", -18.2, "Mantenimiento", "2023-10-27 09:30")
-            )
-        )
-    }
+    // Inicializamos la base de datos y el ViewModel
+    val database = AppDatabase.getDatabase(context)
+    val viewModel: UnitViewModel = viewModel(
+        factory = UnitViewModelFactory(database.unitDao())
+    )
 
     NavHost(navController = navController, startDestination = "search") {
+        // Vista 1: Búsqueda (Ahora Menú Principal)
         composable("search") {
             SearchScreen(
-                onSearchClick = { query ->
-                    // Por ahora navegamos a la lista filtrada o general
-                    navController.navigate("list")
-                }
+                onNavigateToTemperature = { navController.navigate("temperature") },
+                onNavigateToRegistry = { navController.navigate("registry") },
+                onNavigateToChecklist = { navController.navigate("checklist") }
             )
         }
-        composable("list") {
-            UnitListScreen(
-                units = units,
-                onAddUnitClick = { navController.navigate("add") },
-                onUnitClick = { unit -> 
-                    navController.navigate("detail/${unit.id}")
-                }
+        
+        // Vista 2: Toma de Temperaturas
+        composable("temperature") {
+            TemperatureTakingScreen(
+                viewModel = viewModel,
+                onNavigateToRegistry = { navController.navigate("registry") }
             )
         }
-        composable("add") {
-            AddUnitScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onSaveUnit = { plate, temp ->
-                    val newUnit = RefrigeratedUnit(
-                        id = UUID.randomUUID().toString(),
-                        plateNumber = plate,
-                        temperature = temp.toDoubleOrNull() ?: 0.0,
-                        status = "Activo",
-                        lastUpdate = "Recién registrado"
-                    )
-                    units = units + newUnit
-                    navController.popBackStack()
-                }
-            )
+
+        // Vista 3: Registro de Unidad (Aquí es donde se guardan los datos)
+        composable("registry") {
+            RegistryScreen(viewModel = viewModel)
         }
-        composable("detail/{unitId}") { backStackEntry ->
-            val unitId = backStackEntry.arguments?.getString("unitId")
-            val unit = units.find { it.id == unitId }
-            UnitDetailScreen(
-                unit = unit,
-                onNavigateBack = { navController.popBackStack() }
-            )
+
+        // Vista 4: Checklist
+        composable("checklist") {
+            CheckListScreen()
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AppNavigationPreview() {
+    RegistroTheme {
+        // Previsualizamos la pantalla inicial (Menú Principal)
+        SearchScreen(
+            onNavigateToTemperature = {},
+            onNavigateToRegistry = {},
+            onNavigateToChecklist = {}
+        )
     }
 }
