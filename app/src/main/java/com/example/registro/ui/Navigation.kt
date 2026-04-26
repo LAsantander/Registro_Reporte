@@ -29,6 +29,7 @@ fun AppNavigation() {
     NavHost(navController = navController, startDestination = "search") {
         composable("search") {
             SearchScreen(
+                viewModel = viewModel,
                 onNavigateToTemperature = { navController.navigate("temperature") },
                 onNavigateToRegistry = { navController.navigate("registry") },
                 onNavigateToChecklist = { navController.navigate("checklist") },

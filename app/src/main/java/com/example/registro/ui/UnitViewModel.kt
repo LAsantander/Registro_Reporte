@@ -10,6 +10,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.registro.model.BackupData
+import android.content.Context
+import android.net.Uri
+import com.example.registro.ui.utils.BackupUtils
 
 /**
  * El ViewModel es el encargado de gestionar los datos para la interfaz de usuario.
@@ -178,5 +182,45 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
      */
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    // --- Funciones de Respaldo ---
+
+    fun exportarRespaldo(context: Context) {
+        viewModelScope.launch {
+            try {
+                val units = unitDao.getAllUnitsList()
+                val temps = unitDao.getAllTemperaturesList()
+                val hoy = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+                
+                val backup = BackupData(
+                    units = units,
+                    temperatures = temps,
+                    exportDate = hoy
+                )
+                
+                BackupUtils.exportBackup(context, backup)
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al exportar: ${e.message}"
+            }
+        }
+    }
+
+    fun importarRespaldo(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val backup = BackupUtils.importBackup(context, uri)
+                if (backup != null) {
+                    // Insertamos los datos en la base de datos (con estrategia REPLACE si ya existen)
+                    unitDao.insertUnitsList(backup.units)
+                    unitDao.insertTemperaturesList(backup.temperatures)
+                    _successMessage.value = "Respaldo importado con éxito. Se cargaron ${backup.units.size} unidades y ${backup.temperatures.size} registros."
+                } else {
+                    _errorMessage.value = "El archivo de respaldo no es válido o está dañado."
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al importar: ${e.message}"
+            }
+        }
     }
 }

@@ -38,4 +38,17 @@ interface UnitDao {
 
     @Query("SELECT * FROM temperature_records WHERE fechaHora LIKE :todayDate || '%' ORDER BY id DESC")
     suspend fun getTemperaturesByDate(todayDate: String): List<TemperatureEntity>
+
+    // --- Operaciones de Respaldo (Backup) ---
+    @Query("SELECT * FROM refrigerated_units")
+    suspend fun getAllUnitsList(): List<UnitEntity>
+
+    @Query("SELECT * FROM temperature_records")
+    suspend fun getAllTemperaturesList(): List<TemperatureEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUnitsList(units: List<UnitEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTemperaturesList(temps: List<TemperatureEntity>)
 }
