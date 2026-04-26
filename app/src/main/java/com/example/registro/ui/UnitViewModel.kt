@@ -66,6 +66,45 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     }
 
     /**
+     * Función para actualizar una unidad existente.
+     */
+    fun actualizarUnidad(
+        id: Int,
+        placa: String,
+        numeroUnidad: String,
+        marca: String,
+        modelo: String,
+        serie: String,
+        onSuccess: () -> Unit
+    ) {
+        _errorMessage.value = null
+        _successMessage.value = null
+
+        if (placa.isBlank() || numeroUnidad.isBlank() || marca.isBlank()) {
+            _errorMessage.value = "Por favor completa los campos obligatorios."
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val unidadActualizada = UnitEntity(
+                    id = id,
+                    placa = placa.uppercase().trim(),
+                    numeroUnidad = numeroUnidad.trim(),
+                    marca = marca,
+                    modelo = modelo,
+                    serie = serie
+                )
+                unitDao.updateUnit(unidadActualizada)
+                _successMessage.value = "Datos de la unidad actualizados con éxito."
+                onSuccess()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al actualizar: La Placa o el Número de Unidad ya existen."
+            }
+        }
+    }
+
+    /**
      * Busca una unidad en la base de datos por placa o ID.
      */
     suspend fun buscarUnidad(query: String): UnitEntity? {
@@ -80,6 +119,7 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
         numeroUnidad: String,
         temp1: String,
         temp2: String,
+        unidadTemp: String,
         comentarios: String,
         onSuccess: () -> Unit
     ) {
@@ -98,6 +138,7 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
                     numeroUnidad = numeroUnidad.trim(),
                     temp1 = temp1,
                     temp2 = temp2,
+                    unidadTemp = unidadTemp,
                     comentarios = comentarios
                 )
                 unitDao.insertTemperature(registro)

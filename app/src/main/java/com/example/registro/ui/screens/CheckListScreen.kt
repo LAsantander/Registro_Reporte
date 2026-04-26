@@ -48,6 +48,7 @@ fun CheckListScreen(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.TopStart)
+                .statusBarsPadding()
                 .padding(16.dp)
         ) {
             Icon(
@@ -61,6 +62,7 @@ fun CheckListScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth() // Ocupa todo el ancho de la pantalla
+                .statusBarsPadding()
                 .padding(horizontal = 24.dp) // Añade un margen lateral de 24dp
                 .padding(top = 48.dp) // Añade un margen superior de 48dp
                 .verticalScroll(rememberScrollState()), // Permite que la columna sea deslizable

@@ -92,8 +92,8 @@ object PrintUtils {
                     canvas.drawText(hora, 40f, y, paint)
                     canvas.drawText(reg.placa, 90f, y, paint)
                     canvas.drawText(reg.numeroUnidad, 160f, y, paint)
-                    canvas.drawText("${reg.temp1}°", 230f, y, paint)
-                    canvas.drawText("${reg.temp2}°", 290f, y, paint)
+                    canvas.drawText("${reg.temp1}${reg.unidadTemp}", 230f, y, paint)
+                    canvas.drawText("${reg.temp2}${reg.unidadTemp}", 290f, y, paint)
                     
                     val comentarioLimpio = reg.comentarios.replace("\n", " ")
                     val comentarioCorto = if (comentarioLimpio.length > 40) {

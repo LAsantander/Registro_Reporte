@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.registro.ui.theme.RegistroTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
@@ -29,11 +30,28 @@ fun RegistryScreen(
     onBackClick: () -> Unit = {}
 ) {
     // Estados para los campos de texto
+    var id by remember { mutableIntStateOf(0) } // ID de la unidad (0 si es nueva)
+    var searchQuery by remember { mutableStateOf("") } // Para buscar unidades existentes
     var placa by remember { mutableStateOf("") }
     var numeroUnidad by remember { mutableStateOf("") }
     var marca by remember { mutableStateOf("") }
     var modelo by remember { mutableStateOf("") }
     var serie by remember { mutableStateOf("") }
+
+    // Lógica de búsqueda automática para edición
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank() && viewModel != null) {
+            val unidadEncontrada = viewModel.buscarUnidad(searchQuery)
+            if (unidadEncontrada != null) {
+                id = unidadEncontrada.id
+                placa = unidadEncontrada.placa
+                numeroUnidad = unidadEncontrada.numeroUnidad
+                marca = unidadEncontrada.marca
+                modelo = unidadEncontrada.modelo
+                serie = unidadEncontrada.serie
+            }
+        }
+    }
 
     // Estados para el menú desplegable
     var expanded by remember { mutableStateOf(false) }
@@ -88,6 +106,7 @@ fun RegistryScreen(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.TopStart)
+                .statusBarsPadding()
                 .padding(16.dp)
         ) {
             Icon(
@@ -100,6 +119,7 @@ fun RegistryScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = 32.dp)
                 .padding(top = 48.dp)
                 .verticalScroll(rememberScrollState()),
@@ -112,6 +132,33 @@ fun RegistryScreen(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Barra de Búsqueda para Editar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Buscar para editar (Placa o ID)", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
+                },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                )
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                thickness = 1.dp,
+                color = Color.White.copy(alpha = 0.2f)
             )
 
             // 1. Placa
@@ -213,20 +260,35 @@ fun RegistryScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Botón GUARDAR con lógica de ViewModel
+            // Botón GUARDAR / ACTUALIZAR
             Button(
                 onClick = {
-                    viewModel?.guardarUnidad(
-                        placa = placa,
-                        numeroUnidad = numeroUnidad,
-                        marca = marca,
-                        modelo = modelo,
-                        serie = serie,
-                        onSuccess = {
-                            // Limpiar campos después de guardar exitosamente
-                            placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""
-                        }
-                    )
+                    if (id == 0) {
+                        viewModel?.guardarUnidad(
+                            placa = placa,
+                            numeroUnidad = numeroUnidad,
+                            marca = marca,
+                            modelo = modelo,
+                            serie = serie,
+                            onSuccess = {
+                                // Limpiar campos tras guardar
+                                id = 0; searchQuery = ""; placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""
+                            }
+                        )
+                    } else {
+                        viewModel?.actualizarUnidad(
+                            id = id,
+                            placa = placa,
+                            numeroUnidad = numeroUnidad,
+                            marca = marca,
+                            modelo = modelo,
+                            serie = serie,
+                            onSuccess = {
+                                // Limpiar campos tras actualizar
+                                id = 0; searchQuery = ""; placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""
+                            }
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(0.7f).height(56.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -234,7 +296,10 @@ fun RegistryScreen(
                     contentColor = Color.White
                 )
             ) {
-                Text(text = "GUARDAR UNIDAD", fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (id == 0) "GUARDAR UNIDAD" else "ACTUALIZAR DATOS",
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

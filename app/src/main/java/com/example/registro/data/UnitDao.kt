@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -14,6 +15,10 @@ interface UnitDao {
     // Inserta una nueva unidad. Lanza una excepción si la placa o número de unidad ya existen.
     @Insert
     suspend fun insertUnit(unit: UnitEntity)
+
+    // Actualiza los datos de una unidad existente
+    @Update
+    suspend fun updateUnit(unit: UnitEntity)
 
     // Obtiene todas las unidades registradas, ordenadas por placa.
     @Query("SELECT * FROM refrigerated_units ORDER BY placa ASC")

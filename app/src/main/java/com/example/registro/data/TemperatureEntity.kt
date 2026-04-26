@@ -18,6 +18,7 @@ data class TemperatureEntity(
     val numeroUnidad: String,
     val temp1: String,
     val temp2: String,
+    val unidadTemp: String = "C", // Nueva columna para C o F
     val comentarios: String,
     val fechaHora: String = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 )

@@ -45,6 +45,8 @@ fun TemperatureTakingScreen(
     var temp2 by remember { mutableStateOf("") }
     // Estado para almacenar los comentarios adicionales
     var comments by remember { mutableStateOf("") }
+    // Estado para la unidad de temperatura (C o F)
+    var tempUnit by remember { mutableStateOf("C") }
 
     // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
@@ -107,6 +109,7 @@ fun TemperatureTakingScreen(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.TopStart)
+                .statusBarsPadding()
                 .padding(16.dp)
         ) {
             Icon(
@@ -120,6 +123,7 @@ fun TemperatureTakingScreen(
         Column(
             modifier = Modifier // Aplicamos modificadores a la columna
                 .fillMaxWidth() // La columna ocupará todo el ancho disponible
+                .statusBarsPadding()
                 .padding(horizontal = 32.dp) // Aplicamos un margen lateral de 32dp
                 .padding(top = 64.dp), // Aumentado para dar espacio a la flecha de retroceso
             verticalArrangement = Arrangement.spacedBy(16.dp), // Reducido un poco para que quepan todos los campos
@@ -187,6 +191,39 @@ fun TemperatureTakingScreen(
                     unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
                 )
             )
+
+            // Selector de Unidad de Temperatura
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = tempUnit == "F",
+                        onCheckedChange = { if (it) tempUnit = "F" },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Color(0xFF52A8EE),
+                            uncheckedColor = Color.White.copy(alpha = 0.6f),
+                            checkmarkColor = Color.White
+                        )
+                    )
+                    Text("Fahrenheit (F)", color = Color.White)
+                }
+                Spacer(modifier = Modifier.width(24.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = tempUnit == "C",
+                        onCheckedChange = { if (it) tempUnit = "C" },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Color(0xFF52A8EE),
+                            uncheckedColor = Color.White.copy(alpha = 0.6f),
+                            checkmarkColor = Color.White
+                        )
+                    )
+                    Text("Celsius (C)", color = Color.White)
+                }
+            }
 
             // Fila para las temperaturas
             Row(
@@ -269,11 +306,12 @@ fun TemperatureTakingScreen(
                         numeroUnidad = numeroUnidad,
                         temp1 = temp1,
                         temp2 = temp2,
+                        unidadTemp = tempUnit,
                         comentarios = comments,
                         onSuccess = {
                             // Limpiar campos tras guardar
                             searchQuery = ""; vehicleId = ""; numeroUnidad = ""
-                            temp1 = ""; temp2 = ""; comments = ""
+                            temp1 = ""; temp2 = ""; comments = ""; tempUnit = "C"
                         }
                     )
                 },

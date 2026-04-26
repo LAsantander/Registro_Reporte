@@ -42,6 +42,7 @@ android {
 
 ksp {
     arg("ksp.useK2", "false")
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
