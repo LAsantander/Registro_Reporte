@@ -17,7 +17,8 @@ import com.example.registro.ui.theme.RegistroTheme
 fun SearchScreen(
     onNavigateToTemperature: () -> Unit,
     onNavigateToRegistry: () -> Unit,
-    onNavigateToChecklist: () -> Unit
+    onNavigateToChecklist: () -> Unit,
+    onNavigateToHistory: () -> Unit
 ) {
     // Contenedor principal que ocupa toda la pantalla con fondo azul oscuro
     Box(
@@ -73,6 +74,16 @@ fun SearchScreen(
             ) {
                 Text("INSPECCIÓN TÉCNICA", fontWeight = FontWeight.Bold)
             }
+
+            Button(
+                onClick = onNavigateToHistory,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
+            ) {
+                Text("HISTORIAL DE TEMPERATURAS", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -84,7 +95,8 @@ fun SearchScreenPreview() {
         SearchScreen(
             onNavigateToTemperature = {},
             onNavigateToRegistry = {},
-            onNavigateToChecklist = {}
+            onNavigateToChecklist = {},
+            onNavigateToHistory = {}
         )
     }
 }

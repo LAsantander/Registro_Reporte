@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.registro.ui.theme.RegistroTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
@@ -22,7 +24,10 @@ import com.example.registro.ui.UnitViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistryScreen(viewModel: UnitViewModel? = null) {
+fun RegistryScreen(
+    viewModel: UnitViewModel? = null,
+    onBackClick: () -> Unit = {}
+) {
     // Estados para los campos de texto
     var placa by remember { mutableStateOf("") }
     var numeroUnidad by remember { mutableStateOf("") }
@@ -78,11 +83,25 @@ fun RegistryScreen(viewModel: UnitViewModel? = null) {
             .background(Color(0xFF052A50)),
         contentAlignment = Alignment.TopCenter
     ) {
+        // Botón de retroceso
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Regresar",
+                tint = Color.White
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp)
-                .padding(top = 40.dp)
+                .padding(top = 48.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally

@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable // Importa la capacidad de hacer el
 import androidx.compose.foundation.layout.* // Importa herramientas de diseño como Box, Column, Row, etc.
 import androidx.compose.foundation.rememberScrollState // Importa el estado para recordar la posición del scroll
 import androidx.compose.foundation.verticalScroll // Importa la capacidad de hacer scroll vertical
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.* // Importa los componentes de Material Design 3
 import androidx.compose.runtime.* // Importa las herramientas de manejo de estado (remember, mutableStateOf)
 import androidx.compose.ui.Alignment // Importa alineaciones para los elementos
@@ -21,7 +23,9 @@ import com.example.registro.ui.theme.RegistroTheme // Importa el tema visual del
  * Permite registrar el estado de diferentes componentes de la unidad mediante selectores de nivel.
  */
 @Composable // Indica que esta función es un componente de interfaz de usuario
-fun CheckListScreen() { 
+fun CheckListScreen(
+    onBackClick: () -> Unit = {}
+) {
     // Variable para recordar la opción seleccionada en "Nivel de aceite"
     var opcionAceite by remember { mutableStateOf("") }
     // Variable para recordar la opción seleccionada en "Refrigerante de motor"
@@ -39,12 +43,26 @@ fun CheckListScreen() {
             .background(Color(0xFF052A50)), // Aplica el fondo azul oscuro característico
         contentAlignment = Alignment.TopCenter // Alinea el contenido al centro en la parte superior
     ) {
+        // Botón de retroceso
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Regresar",
+                tint = Color.White
+            )
+        }
+
         // Columna que organiza los elementos uno debajo de otro con scroll
         Column(
             modifier = Modifier
                 .fillMaxWidth() // Ocupa todo el ancho de la pantalla
                 .padding(horizontal = 24.dp) // Añade un margen lateral de 24dp
-                .padding(top = 40.dp) // Añade un margen superior de 40dp
+                .padding(top = 48.dp) // Añade un margen superior de 48dp
                 .verticalScroll(rememberScrollState()), // Permite que la columna sea deslizable
             horizontalAlignment = Alignment.CenterHorizontally, // Centra los elementos de forma horizontal
             verticalArrangement = Arrangement.spacedBy(20.dp) // Añade un espacio de 20dp entre cada elemento

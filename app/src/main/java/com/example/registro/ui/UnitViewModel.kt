@@ -110,6 +110,13 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     }
 
     /**
+     * Obtiene los registros de temperatura de una fecha específica.
+     */
+    suspend fun obtenerRegistrosPorFecha(fecha: String): List<com.example.registro.data.TemperatureEntity> {
+        return unitDao.getTemperaturesByDate(fecha.trim())
+    }
+
+    /**
      * Obtiene los registros de temperatura del día actual.
      */
     suspend fun obtenerRegistrosDelDia(): List<com.example.registro.data.TemperatureEntity> {
