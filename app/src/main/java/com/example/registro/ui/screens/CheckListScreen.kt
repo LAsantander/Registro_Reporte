@@ -1,40 +1,137 @@
 package com.example.registro.ui.screens // Define el paquete donde se encuentra esta pantalla
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background // Importa la capacidad de poner fondos de color
-import androidx.compose.foundation.clickable // Importa la capacidad de hacer elementos clickeables
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.* // Importa herramientas de diseño como Box, Column, Row, etc.
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState // Importa el estado para recordar la posición del scroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll // Importa la capacidad de hacer scroll vertical
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.* // Importa los componentes de Material Design 3
 import androidx.compose.runtime.* // Importa las herramientas de manejo de estado (remember, mutableStateOf)
 import androidx.compose.ui.Alignment // Importa alineaciones para los elementos
 import androidx.compose.ui.Modifier // Importa modificadores para personalizar componentes
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color // Importa la clase para manejar colores
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight // Importa estilos de grosor de fuente
 import androidx.compose.ui.tooling.preview.Preview // Importa la capacidad de ver previas en el IDE
 import androidx.compose.ui.unit.dp // Importa unidades de medida dp (densidad de píxeles)
 import androidx.compose.ui.unit.sp // Importa unidades de medida sp (para texto)
+import androidx.core.content.FileProvider
+import com.example.registro.ui.UnitViewModel
+import com.example.registro.ui.utils.ImageUtils
+import com.example.registro.ui.utils.PrintUtils
 import com.example.registro.ui.theme.RegistroTheme // Importa el tema visual del proyecto
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import coil.compose.AsyncImage
+import java.io.File
 
 /**
  * Pantalla de Inspección Técnica (Checklist).
- * Permite registrar el estado de diferentes componentes de la unidad mediante selectores de nivel.
+ * Permite visualizar y gestionar la inspección de las unidades.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable // Indica que esta función es un componente de interfaz de usuario
 fun CheckListScreen(
+    viewModel: UnitViewModel? = null,
     onBackClick: () -> Unit = {}
 ) {
-    // Variable para recordar la opción seleccionada en "Nivel de aceite"
-    var opcionAceite by remember { mutableStateOf("") }
-    // Variable para recordar la opción seleccionada en "Refrigerante de motor"
-    var opcionRefrigerante by remember { mutableStateOf("") }
-    // Variable para recordar la opción seleccionada en "Estado de las correas"
-    var opcionCorreas by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
     
-    // Lista de opciones generales para las primeras dos cajas (Bajo, Medio, Completo)
-    val opciones = listOf("Bajo", "Medio", "Completo")
+    // Estado para la búsqueda y datos de la unidad
+    var searchQuery by remember { mutableStateOf("") }
+    var placa by remember { mutableStateOf("") }
+    var numeroUnidad by remember { mutableStateOf("") }
+    var camion by remember { mutableStateOf("") }
+
+    // Estado para comentarios y fotos
+    var comentarios by remember { mutableStateOf("") }
+    val fotosCapturadas = remember { mutableStateListOf<Uri>() }
+    var tempFile by remember { mutableStateOf<File?>(null) }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Observar mensajes del ViewModel
+    val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+    val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+    val hallazgos by (viewModel?.hallazgosChecklist?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
+
+    // Mostrar Alerta si hay un error
+    if (errorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel?.clearMessages() },
+            title = { Text("Aviso") },
+            text = { Text(errorMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { viewModel?.clearMessages() }) {
+                    Text("Entendido")
+                }
+            },
+            containerColor = Color(0xFFB71C1C),
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
+
+    // Mostrar Alerta si el registro fue exitoso
+    if (successMessage != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel?.clearMessages() },
+            title = { Text("Éxito") },
+            text = { Text(successMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { viewModel?.clearMessages() }) {
+                    Text("Aceptar")
+                }
+            },
+            containerColor = Color(0xFF1B5E20),
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
+
+    // Configuracion de la cámara con compresión
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempFile != null) {
+            // Comprimimos la imagen antes de añadirla a la lista
+            val compressedUri = ImageUtils.compressAndResizeImage(tempFile!!)
+            if (compressedUri != null) {
+                fotosCapturadas.add(compressedUri)
+            }
+        }
+    }
+
+
+    // Lógica de búsqueda automática
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank() && viewModel != null) {
+            val unidadEncontrada = viewModel.buscarUnidad(searchQuery)
+            if (unidadEncontrada != null) {
+                placa = unidadEncontrada.placa
+                numeroUnidad = unidadEncontrada.numeroUnidad
+                camion = "${unidadEncontrada.marca} ${unidadEncontrada.modelo}"
+            }
+        }
+    }
+
+    // Foco inicial en el buscador
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     // Contenedor principal que ocupa toda la pantalla
     Box(
@@ -78,183 +175,245 @@ fun CheckListScreen(
                 modifier = Modifier.padding(bottom = 8.dp) // Margen inferior de 8dp
             )
 
-            // ---------------------------------------------------------
-            // 1. CAJA DE INSPECCIÓN: Nivel de aceite
-            // ---------------------------------------------------------
-            Surface( // Superficie que actúa como contenedor de la caja
-                modifier = Modifier.fillMaxWidth(), // Ancho completo
-                color = Color.White.copy(alpha = 0.05f), // Color blanco muy transparente (efecto traslúcido)
-                shape = MaterialTheme.shapes.medium // Bordes redondeados de tamaño medio
-            ) {
-                Column( // Columna interna de la caja
-                    modifier = Modifier.padding(vertical = 20.dp), // Margen interno vertical de 20dp
-                    horizontalAlignment = Alignment.CenterHorizontally // Centra el contenido internamente
-                ) {
-                    Text( // Título de la caja
-                        text = "Nivel de aceite", // Nombre del ítem a inspeccionar
-                        color = Color.White, // Color blanco
-                        fontSize = 20.sp, // Tamaño de 20sp
-                        fontWeight = FontWeight.Bold, // Negrita
-                        modifier = Modifier.padding(bottom = 16.dp) // Margen inferior de 16dp
-                    )
-
-                    Row( // Fila para mostrar las opciones horizontalmente
-                        modifier = Modifier.fillMaxWidth(), // Ancho completo de la fila
-                        horizontalArrangement = Arrangement.SpaceEvenly, // Distribuye las opciones equitativamente
-                        verticalAlignment = Alignment.CenterVertically // Centra verticalmente los elementos de la fila
-                    ) {
-                        opciones.forEach { opcion -> // Itera sobre cada opción (Bajo, Medio, Completo)
-                            Column( // Columna para cada par Checkbox + Texto
-                                horizontalAlignment = Alignment.CenterHorizontally, // Centra elementos
-                                modifier = Modifier
-                                    .clickable { opcionAceite = opcion } // Permite seleccionar al hacer click en el área
-                                    .padding(horizontal = 8.dp) // Margen lateral de 8dp
-                            ) {
-                                Checkbox( // El control de selección
-                                    checked = (opcionAceite == opcion), // Está marcado si coincide con el estado
-                                    onCheckedChange = { if (it) opcionAceite = opcion }, // Cambia el estado al marcar
-                                    colors = CheckboxDefaults.colors( // Personaliza los colores del Checkbox
-                                        checkedColor = Color(0xFF52A8EE), // Color azul brillante cuando está marcado
-                                        uncheckedColor = Color.White.copy(alpha = 0.6f), // Color tenue cuando no está marcado
-                                        checkmarkColor = Color.White // Color del check interno
-                                    )
-                                )
-                                Text( // Etiqueta de la opción
-                                    text = opcion, // "Bajo", "Medio" o "Completo"
-                                    color = Color.White, // Color blanco
-                                    fontSize = 14.sp, // Tamaño de 14sp
-                                    fontWeight = if (opcionAceite == opcion) FontWeight.Bold else FontWeight.Normal // Resalta si está seleccionado
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ---------------------------------------------------------
-            // 2. CAJA DE INSPECCIÓN: Refrigerante de motor
-            // ---------------------------------------------------------
-            Surface( // Superficie contenedora de la segunda caja
-                modifier = Modifier.fillMaxWidth(), // Ancho completo
-                color = Color.White.copy(alpha = 0.05f), // Fondo traslúcido
-                shape = MaterialTheme.shapes.medium // Bordes redondeados
-            ) {
-                Column( // Contenido vertical de la caja
-                    modifier = Modifier.padding(vertical = 20.dp), // Espaciado interno
-                    horizontalAlignment = Alignment.CenterHorizontally // Centrado
-                ) {
-                    Text( // Nombre del ítem
-                        text = "Refrigerante de motor", // Texto a mostrar
-                        color = Color.White, // Color blanco
-                        fontSize = 20.sp, // Tamaño de fuente
-                        fontWeight = FontWeight.Bold, // Negrita
-                        modifier = Modifier.padding(bottom = 16.dp) // Margen inferior
-                    )
-
-                    Row( // Fila horizontal para opciones
-                        modifier = Modifier.fillMaxWidth(), // Ancho completo
-                        horizontalArrangement = Arrangement.SpaceEvenly, // Espaciado igual
-                        verticalAlignment = Alignment.CenterVertically // Centrado vertical
-                    ) {
-                        opciones.forEach { opcion -> // Repite por cada opción
-                            Column( // Contenedor vertical de cada opción
-                                horizontalAlignment = Alignment.CenterHorizontally, // Centrado
-                                modifier = Modifier
-                                    .clickable { opcionRefrigerante = opcion } // Click para seleccionar
-                                    .padding(horizontal = 8.dp) // Margen lateral
-                            ) {
-                                Checkbox( // Control de selección
-                                    checked = (opcionRefrigerante == opcion), // Estado de selección
-                                    onCheckedChange = { if (it) opcionRefrigerante = opcion }, // Acción al cambiar
-                                    colors = CheckboxDefaults.colors( // Personalización de colores
-                                        checkedColor = Color(0xFF52A8EE), // Azul brillante
-                                        uncheckedColor = Color.White.copy(alpha = 0.6f), // Blanco tenue
-                                        checkmarkColor = Color.White // Check blanco
-                                    )
-                                )
-                                Text( // Nombre de la opción
-                                    text = opcion, // Texto de nivel
-                                    color = Color.White, // Blanco
-                                    fontSize = 14.sp, // Tamaño
-                                    fontWeight = if (opcionRefrigerante == opcion) FontWeight.Bold else FontWeight.Normal // Negrita si está activa
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ---------------------------------------------------------
-            // 3. CAJA DE INSPECCIÓN: Estado de las correas
-            // ---------------------------------------------------------
-            Surface( // Superficie para la tercera caja
-                modifier = Modifier.fillMaxWidth(), // Ancho completo
-                color = Color.White.copy(alpha = 0.05f), // Fondo traslúcido
-                shape = MaterialTheme.shapes.medium // Bordes redondeados
-            ) {
-                Column( // Contenedor vertical interno
-                    modifier = Modifier.padding(vertical = 20.dp), // Espaciado vertical
-                    horizontalAlignment = Alignment.CenterHorizontally // Centrado horizontal
-                ) {
-                    Text( // Título de esta inspección
-                        text = "Estado de las correas", // Texto descriptivo
-                        color = Color.White, // Color blanco
-                        fontSize = 20.sp, // Tamaño de fuente
-                        fontWeight = FontWeight.Bold, // Negrita
-                        modifier = Modifier.padding(bottom = 16.dp) // Espacio inferior
-                    )
-
-                    Row( // Fila para las opciones específicas de correas
-                        modifier = Modifier.fillMaxWidth(), // Ancho completo
-                        horizontalArrangement = Arrangement.SpaceEvenly, // Distribución uniforme
-                        verticalAlignment = Alignment.CenterVertically // Alineación vertical
-                    ) {
-                        // Lista de opciones personalizadas para este punto
-                        val opcionesCorreasList = listOf("Buenas", "Regular", "Desgastadas")
-                        opcionesCorreasList.forEach { opcion -> // Itera sobre cada estado
-                            Column( // Contenedor de cada estado (Checkbox + Texto)
-                                horizontalAlignment = Alignment.CenterHorizontally, // Centrado
-                                modifier = Modifier
-                                    .clickable { opcionCorreas = opcion } // Acción de click en el área
-                                    .padding(horizontal = 8.dp) // Margen lateral
-                            ) {
-                                Checkbox( // El control visual de selección
-                                    checked = (opcionCorreas == opcion), // Marcado si coincide con el estado
-                                    onCheckedChange = { if (it) opcionCorreas = opcion }, // Actualiza selección
-                                    colors = CheckboxDefaults.colors( // Colores personalizados
-                                        checkedColor = Color(0xFF52A8EE), // Azul si está marcado
-                                        uncheckedColor = Color.White.copy(alpha = 0.6f), // Grisáceo si no
-                                        checkmarkColor = Color.White // Check blanco
-                                    )
-                                )
-                                Text( // Etiqueta del estado
-                                    text = opcion, // Texto "Buenas", "Regular", etc.
-                                    color = Color.White, // Color blanco
-                                    fontSize = 14.sp, // Tamaño de fuente
-                                    fontWeight = if (opcionCorreas == opcion) FontWeight.Bold else FontWeight.Normal // Resalte visual
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Añade un espacio de 20dp antes del botón
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Botón principal para procesar y guardar los datos
-            Button(
-                onClick = { /* Aquí iría la lógica para enviar o guardar los datos */ }, // Acción al pulsar
+            // BARRA DE BÚSQUEDA
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Buscar unidad (Placa o ID)", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier
-                    .fillMaxWidth(0.7f) // El botón ocupa el 70% del ancho disponible
-                    .height(56.dp), // Altura estándar de 56dp
-                colors = ButtonDefaults.buttonColors( // Colores del botón
-                    containerColor = Color(0xFF52A8EE), // Fondo azul brillante
-                    contentColor = Color.White // Texto blanco
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
+                },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
                 )
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                thickness = 1.dp,
+                color = Color.White.copy(alpha = 0.2f)
+            )
+
+            // Datos de la unidad encontrada
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Texto dentro del botón
-                Text(text = "GUARDAR INSPECCIÓN", fontWeight = FontWeight.Bold) // Texto en negrita
+                OutlinedTextField(
+                    value = placa,
+                    onValueChange = { placa = it },
+                    label = { Text("Placa", color = Color.White.copy(alpha = 0.7f)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f)
+                    )
+                )
+                OutlinedTextField(
+                    value = numeroUnidad,
+                    onValueChange = { numeroUnidad = it },
+                    label = { Text("Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f)
+                    )
+                )
+            }
+
+            // Campo para el Camión
+            OutlinedTextField(
+                value = camion,
+                onValueChange = { camion = it },
+                label = { Text("Camión", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                )
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                thickness = 1.dp,
+                color = Color.White.copy(alpha = 0.2f)
+            )
+
+            // CONTENEDOR UNIFICADO: COMENTARIOS Y FOTOS
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Observaciones y Evidencia",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Campo de Comentarios
+                    OutlinedTextField(
+                        value = comentarios,
+                        onValueChange = { comentarios = it },
+                        placeholder = { Text("Escribe aquí tus observaciones...", color = Color.White.copy(alpha = 0.4f)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                            cursorColor = Color.White
+                        )
+                    )
+
+                    // Sección de Fotos
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Botón para capturar foto
+                        Card(
+                            onClick = {
+                                val file = File(context.cacheDir, "IMG_${System.currentTimeMillis()}.jpg")
+                                tempFile = file
+                                val uri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file
+                                )
+                                tempUri = uri
+                                cameraLauncher.launch(uri)
+                            },
+                            modifier = Modifier.size(70.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Icon(
+                                    imageVector = Icons.Default.AddAPhoto,
+                                    contentDescription = "Tomar Foto",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+
+                        // Lista horizontal de fotos capturadas
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(end = 8.dp)
+                        ) {
+                            items(fotosCapturadas) { uri ->
+                                AsyncImage(
+                                    model = uri,
+                                    contentDescription = "Foto capturada",
+                                    modifier = Modifier
+                                        .size(70.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+
+                    // Botón para Guardar el Reporte
+                    Button(
+                        onClick = {
+                            if (placa.isNotBlank() && (comentarios.isNotBlank() || fotosCapturadas.isNotEmpty())) {
+                                viewModel?.guardarInspeccion(
+                                    placa = placa,
+                                    comentarios = comentarios,
+                                    fotos = fotosCapturadas.toList()
+                                ) {
+                                    // Limpiamos los campos al tener éxito
+                                    comentarios = ""
+                                    fotosCapturadas.clear()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        enabled = placa.isNotBlank() && (comentarios.isNotBlank() || fotosCapturadas.isNotEmpty()),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF52A8EE),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("GUARDAR REPORTE", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            // Botón para Finalizar toda la Inspección
+            Button(
+                onClick = {
+                    if (placa.isNotBlank()) {
+                        // Imprimir PDF con todos los hallazgos acumulados
+                        if (hallazgos.isNotEmpty()) {
+                            PrintUtils.imprimirChecklist(
+                                context = context,
+                                placa = placa,
+                                unidad = numeroUnidad,
+                                camion = camion,
+                                hallazgos = hallazgos
+                            )
+                        }
+
+                        // Limpiamos todo y regresamos
+                        viewModel?.limpiarSesionChecklist()
+                        searchQuery = ""
+                        placa = ""
+                        numeroUnidad = ""
+                        camion = ""
+                        comentarios = ""
+                        fotosCapturadas.clear()
+                        onBackClick()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = placa.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1B5E20), // Verde oscuro para indicar finalización
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("FINALIZAR INSPECCIÓN", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
 
             // Espacio al final de la columna para que el scroll no corte el contenido

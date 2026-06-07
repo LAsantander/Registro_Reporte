@@ -180,8 +180,35 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     /**
      * Limpia el mensaje de error para cerrar la alerta.
      */
+    // --- Estado para Checklist ---
+    private val _hallazgosChecklist = MutableStateFlow<List<Pair<String, List<Uri>>>>(emptyList())
+    val hallazgosChecklist: StateFlow<List<Pair<String, List<Uri>>>> = _hallazgosChecklist
+
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    /**
+     * Guarda un hallazgo en la lista temporal de la sesión actual.
+     */
+    fun guardarInspeccion(
+        placa: String,
+        comentarios: String,
+        fotos: List<Uri>,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val listaActual = _hallazgosChecklist.value.toMutableList()
+            listaActual.add(Pair(comentarios, fotos))
+            _hallazgosChecklist.value = listaActual
+            
+            _successMessage.value = "Punto de inspección registrado"
+            onSuccess()
+        }
+    }
+
+    fun limpiarSesionChecklist() {
+        _hallazgosChecklist.value = emptyList()
     }
 
     // --- Funciones de Respaldo ---

@@ -56,6 +56,7 @@ fun AppNavigation() {
         // Vista 4: Checklist
         composable("checklist") {
             CheckListScreen(
+                viewModel = viewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

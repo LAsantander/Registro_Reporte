@@ -2,6 +2,8 @@ package com.example.registro.ui.screens // Paquete donde se encuentra la pantall
 
 import androidx.compose.foundation.background // Importación para manejar fondos
 import androidx.compose.foundation.layout.* // Importación para el manejo de layouts (Box, Column, Row, etc.)
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable // Importación para definir funciones Composable
 import androidx.compose.ui.Modifier // Importación para usar modificadores de UI
 import androidx.compose.ui.graphics.Color // Importación para el manejo de colores
@@ -15,9 +17,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment // Importación para alineación de elementos
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp // Importación para unidades de medida en densidad de píxeles
 import androidx.compose.foundation.text.KeyboardOptions // Importación para configurar opciones del teclado
 import androidx.compose.ui.text.input.KeyboardType // Importación para definir el tipo de entrada del teclado
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign // Importación para alinear texto
 
 import com.example.registro.ui.UnitViewModel
@@ -33,6 +38,8 @@ fun TemperatureTakingScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+
     // Estado para la barra de búsqueda superior
     var searchQuery by remember { mutableStateOf("") }
     // Estado para almacenar el valor del ID del vehículo o placa
@@ -97,44 +104,51 @@ fun TemperatureTakingScreen(
         }
     }
 
-    // Contenedor principal de tipo Box para manejar el fondo y la alineación superior
-    Box(
-        modifier = Modifier // Aplicamos modificadores al Box
-            .fillMaxSize() // El Box ocupará todo el tamaño disponible de la pantalla
-            .background(Color(0xFF052A50)), // Aplicamos el color de fondo azul oscuro
-        contentAlignment = Alignment.TopCenter // Alineamos al tope superior para poder posicionar los elementos más arriba
-    ) {
-        // Botón de retroceso en la parte superior izquierda
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Regresar",
-                tint = Color.White
-            )
-        }
+    // Solicitar foco al iniciar la pantalla
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
-        // Columna para organizar los elementos de entrada uno debajo del otro
+    // Estructura principal con Scaffold para manejar TopBar y márgenes de sistema
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Toma de Temperatura", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF052A50) // Mismo color azul que el fondo
+                )
+            )
+        },
+        containerColor = Color(0xFF052A50) // Fondo de toda la pantalla
+    ) { innerPadding ->
+        // Contenido Principal
         Column(
-            modifier = Modifier // Aplicamos modificadores a la columna
-                .fillMaxWidth() // La columna ocupará todo el ancho disponible
-                .statusBarsPadding()
-                .padding(horizontal = 32.dp) // Aplicamos un margen lateral de 32dp
-                .padding(top = 64.dp), // Aumentado para dar espacio a la flecha de retroceso
-            verticalArrangement = Arrangement.spacedBy(16.dp), // Reducido un poco para que quepan todos los campos
-            horizontalAlignment = Alignment.CenterHorizontally // Centramos los elementos horizontalmente
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Aplica el margen seguro de la TopBar automáticamente
+                .imePadding() // Empuja el contenido hacia arriba cuando sale el teclado
+                .padding(horizontal = 32.dp)
+                .verticalScroll(rememberScrollState()), // Permite el scroll del formulario
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Barra de Búsqueda Superior
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 label = { Text("Buscar unidad (Placa o ID)", color = Color.White.copy(alpha = 0.7f)) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
                 },
@@ -276,15 +290,27 @@ fun TemperatureTakingScreen(
             }
 
             // Comentarios
+            val maxChar = 80
             OutlinedTextField(
                 value = comments,
-                onValueChange = { comments = it },
+                onValueChange = { if (it.length <= maxChar) comments = it },
                 label = { Text("Comentarios", color = Color.White.copy(alpha = 0.7f)) },
+                supportingText = {
+                    Text(
+                        text = "${comments.length} / $maxChar",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp),
+                    .height(130.dp), // Aumentado para el contador
                 singleLine = false,
                 maxLines = 3,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -312,6 +338,8 @@ fun TemperatureTakingScreen(
                             // Limpiar campos tras guardar
                             searchQuery = ""; vehicleId = ""; numeroUnidad = ""
                             temp1 = ""; temp2 = ""; comments = ""; tempUnit = "C"
+                            // Devolver el foco a la barra de búsqueda
+                            focusRequester.requestFocus()
                         }
                     )
                 },
@@ -346,6 +374,9 @@ fun TemperatureTakingScreen(
             ) {
                 Text(text = "IMPRIMIR", style = MaterialTheme.typography.titleMedium)
             }
+            
+            // Margen final de seguridad
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
