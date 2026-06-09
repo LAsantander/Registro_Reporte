@@ -56,6 +56,8 @@ fun CheckListScreen(
     var placa by remember { mutableStateOf("") }
     var numeroUnidad by remember { mutableStateOf("") }
     var camion by remember { mutableStateOf("") }
+    var voltaje by remember { mutableStateOf("") }
+    var modeloUnidad by remember { mutableStateOf("") }
 
     // Estado para comentarios y fotos
     var comentarios by remember { mutableStateOf("") }
@@ -124,6 +126,7 @@ fun CheckListScreen(
                 placa = unidadEncontrada.placa
                 numeroUnidad = unidadEncontrada.numeroUnidad
                 camion = "${unidadEncontrada.marca} ${unidadEncontrada.modelo}"
+                modeloUnidad = unidadEncontrada.serie
             }
         }
     }
@@ -225,7 +228,7 @@ fun CheckListScreen(
                 OutlinedTextField(
                     value = numeroUnidad,
                     onValueChange = { numeroUnidad = it },
-                    label = { Text("Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                    label = { Text("N.Unidad", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -254,6 +257,45 @@ fun CheckListScreen(
                     unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
                 )
             )
+
+            // Fila para Voltaje y Modelo Unidad
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = voltaje,
+                    onValueChange = { voltaje = it },
+                    label = { Text("Voltaje", color = Color.White.copy(alpha = 0.7f)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                        cursorColor = Color.White,
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                    )
+                )
+                OutlinedTextField(
+                    value = modeloUnidad,
+                    onValueChange = { modeloUnidad = it },
+                    label = { Text("Modelo Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                        cursorColor = Color.White,
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                    )
+                )
+            }
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 4.dp),
@@ -297,13 +339,20 @@ fun CheckListScreen(
                     )
 
                     // Sección de Fotos
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Botón para capturar foto
-                        Card(
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Sugerencia: Toma las fotos en horizontal para un mejor reporte",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Botón para capturar foto
+                            Card(
                             onClick = {
                                 val file = File(context.cacheDir, "IMG_${System.currentTimeMillis()}.jpg")
                                 tempFile = file
@@ -346,8 +395,9 @@ fun CheckListScreen(
                             }
                         }
                     }
+                }
 
-                    // Botón para Guardar el Reporte
+                // Botón para Guardar el Reporte
                     Button(
                         onClick = {
                             if (placa.isNotBlank() && (comentarios.isNotBlank() || fotosCapturadas.isNotEmpty())) {
@@ -383,11 +433,13 @@ fun CheckListScreen(
                     if (placa.isNotBlank()) {
                         // Imprimir PDF con todos los hallazgos acumulados
                         if (hallazgos.isNotEmpty()) {
-                            PrintUtils.imprimirChecklist(
+                                PrintUtils.imprimirChecklist(
                                 context = context,
                                 placa = placa,
                                 unidad = numeroUnidad,
                                 camion = camion,
+                                voltaje = voltaje,
+                                modeloUnidad = modeloUnidad,
                                 hallazgos = hallazgos
                             )
                         }
@@ -398,6 +450,8 @@ fun CheckListScreen(
                         placa = ""
                         numeroUnidad = ""
                         camion = ""
+                        voltaje = ""
+                        modeloUnidad = ""
                         comentarios = ""
                         fotosCapturadas.clear()
                         onBackClick()

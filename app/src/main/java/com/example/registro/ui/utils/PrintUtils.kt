@@ -33,6 +33,8 @@ object PrintUtils {
         placa: String,
         unidad: String,
         camion: String,
+        voltaje: String,
+        modeloUnidad: String,
         hallazgos: List<Pair<String, List<Uri>>>
     ) {
         val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
@@ -83,6 +85,8 @@ object PrintUtils {
                 currentY += 20f
                 canvas.drawText("Camión: $camion", margin, currentY, bodyPaint)
                 currentY += 20f
+                canvas.drawText("Voltaje: $voltaje | Modelo Unidad: $modeloUnidad", margin, currentY, bodyPaint)
+                currentY += 20f
                 canvas.drawText("Fecha: $hoy", margin, currentY, bodyPaint)
                 currentY += 15f
                 canvas.drawLine(margin, currentY, 555f, currentY, paint)
@@ -116,23 +120,31 @@ object PrintUtils {
                     if (fotos.isNotEmpty()) {
                         currentY += 10f
                         var currentX = margin + 10f
+                        var rowMaxHeight = 0f
+                        
                         fotos.forEach { uri ->
                             try {
                                 val inputStream = context.contentResolver.openInputStream(uri)
                                 val originalBitmap = BitmapFactory.decodeStream(inputStream)
                                 if (originalBitmap != null) {
-                                    // Redimensionar para el PDF (aprox 120dp de ancho)
-                                    val scale = 120f / originalBitmap.width
-                                    val scaledBitmap = Bitmap.createScaledBitmap(
-                                        originalBitmap,
-                                        120,
-                                        (originalBitmap.height * scale).toInt(),
-                                        true
-                                    )
+                                    val maxWidth = 150f 
+                                    val maxHeight = 180f // Altura máxima para evitar que fotos verticales sean gigantes
                                     
-                                    if (currentX + 130f > 555f) { // Salto de fila de fotos
+                                    var finalWidth = maxWidth
+                                    var finalHeight = originalBitmap.height * (maxWidth / originalBitmap.width)
+
+                                    // Si es vertical y excede la altura, ajustamos proporcionalmente por la altura
+                                    if (finalHeight > maxHeight) {
+                                        finalHeight = maxHeight
+                                        finalWidth = originalBitmap.width * (maxHeight / originalBitmap.height)
+                                    }
+                                    
+                                    // Si la foto no cabe en la fila actual, bajamos a la siguiente
+                                    if (currentX + finalWidth > 555f) {
+                                        currentY += rowMaxHeight + 10f
                                         currentX = margin + 10f
-                                        currentY += 130f
+                                        rowMaxHeight = 0f
+                                        
                                         // Nueva página si es necesario
                                         if (currentY > 750f) {
                                             pdfDocument.finishPage(page)
@@ -144,15 +156,20 @@ object PrintUtils {
                                         }
                                     }
 
-                                    canvas.drawBitmap(scaledBitmap, currentX, currentY, null)
-                                    currentX += 130f
+                                    val dstRect = android.graphics.RectF(currentX, currentY, currentX + finalWidth, currentY + finalHeight)
+                                    canvas.drawBitmap(originalBitmap, null, dstRect, null)
+                                    
+                                    // Guardamos la altura máxima de la fila actual para el siguiente salto
+                                    if (finalHeight > rowMaxHeight) rowMaxHeight = finalHeight
+                                    currentX += finalWidth + 10f
                                 }
                                 inputStream?.close()
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
                         }
-                        currentY += 140f // Espacio después de la fila de fotos
+                        // Al terminar las fotos, sumamos la altura de la última fila
+                        currentY += rowMaxHeight + 10f
                     }
                     currentY += 20f
                     canvas.drawLine(margin + 10f, currentY - 10f, 500f, currentY - 10f, paint.apply { color = Color.LTGRAY })

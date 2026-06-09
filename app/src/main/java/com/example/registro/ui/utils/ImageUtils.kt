@@ -12,7 +12,7 @@ object ImageUtils {
      * @param file El archivo original capturado por la cámara.
      * @return Uri del nuevo archivo comprimido.
      */
-    fun compressAndResizeImage(file: File, maxWidth: Int = 1024, maxHeight: Int = 1024): Uri? {
+    fun compressAndResizeImage(file: File, maxWidth: Int = 1600, maxHeight: Int = 1600): Uri? {
         return try {
             // 1. Cargar solo las dimensiones para calcular el factor de escala
             val options = BitmapFactory.Options().apply {
@@ -31,8 +31,8 @@ object ImageUtils {
             val compressedFile = File(file.parent, "C_${file.name}")
             val out = FileOutputStream(compressedFile)
             
-            // 5. Comprimir a JPEG con calidad 80% (balance ideal)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+            // 5. Comprimir a JPEG con calidad 90% (Mejor calidad para impresión)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
             out.flush()
             out.close()
             
