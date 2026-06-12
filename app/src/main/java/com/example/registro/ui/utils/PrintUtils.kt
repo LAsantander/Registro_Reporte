@@ -35,7 +35,8 @@ object PrintUtils {
         camion: String,
         voltaje: String,
         modeloUnidad: String,
-        hallazgos: List<Pair<String, List<Uri>>>
+        hallazgos: List<Pair<String, List<Uri>>>,
+        sugerencias: String
     ) {
         val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
         val hoy = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
@@ -80,12 +81,16 @@ object PrintUtils {
 
                 // Encabezado
                 canvas.drawText("REPORTE DE INSPECCIÓN TÉCNICA", margin, currentY, titlePaint)
-                currentY += 25f
-                canvas.drawText("Unidad: $unidad | Placa: $placa", margin, currentY, bodyPaint)
+                currentY += 30f
+                canvas.drawText("Placa: $placa", margin, currentY, bodyPaint)
+                currentY += 20f
+                canvas.drawText("Unidad: $unidad", margin, currentY, bodyPaint)
+                currentY += 20f
+                canvas.drawText("Modelo Unidad: $modeloUnidad", margin, currentY, bodyPaint)
+                currentY += 20f
+                canvas.drawText("Voltaje: $voltaje", margin, currentY, bodyPaint)
                 currentY += 20f
                 canvas.drawText("Camión: $camion", margin, currentY, bodyPaint)
-                currentY += 20f
-                canvas.drawText("Voltaje: $voltaje | Modelo Unidad: $modeloUnidad", margin, currentY, bodyPaint)
                 currentY += 20f
                 canvas.drawText("Fecha: $hoy", margin, currentY, bodyPaint)
                 currentY += 15f
@@ -173,6 +178,26 @@ object PrintUtils {
                     }
                     currentY += 20f
                     canvas.drawLine(margin + 10f, currentY - 10f, 500f, currentY - 10f, paint.apply { color = Color.LTGRAY })
+                }
+
+                // Dibujar Sugerencias Finales
+                if (sugerencias.isNotBlank()) {
+                    if (currentY > 750f) {
+                        pdfDocument.finishPage(page)
+                        currentPageNumber++
+                        pageInfo = PdfDocument.PageInfo.Builder(595, 842, currentPageNumber).create()
+                        page = pdfDocument.startPage(pageInfo)
+                        canvas = page.canvas
+                        currentY = 50f
+                    }
+                    currentY += 20f
+                    canvas.drawText("Sugerencias Finales / Recomendaciones:", margin, currentY, titlePaint.apply { textSize = 12f; color = Color.BLACK })
+                    currentY += 20f
+                    val lines = sugerencias.chunked(70)
+                    lines.forEach { line ->
+                        canvas.drawText(line, margin + 10f, currentY, bodyPaint)
+                        currentY += 15f
+                    }
                 }
 
                 pdfDocument.finishPage(page)

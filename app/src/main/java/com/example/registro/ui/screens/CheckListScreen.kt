@@ -61,9 +61,13 @@ fun CheckListScreen(
 
     // Estado para comentarios y fotos
     var comentarios by remember { mutableStateOf("") }
+    var sugerenciasFinales by remember { mutableStateOf("") }
     val fotosCapturadas = remember { mutableStateListOf<Uri>() }
     var tempFile by remember { mutableStateOf<File?>(null) }
     var tempUri by remember { mutableStateOf<Uri?>(null) }
+    
+    // Estado para confirmar salida
+    var showExitDialog by remember { mutableStateOf(false) }
 
     // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
@@ -104,6 +108,43 @@ fun CheckListScreen(
         )
     }
 
+    // Alerta de Confirmación para Finalizar
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("¿Finalizar Inspección?") },
+            text = { Text("Se borrarán todos los datos actuales y regresará al menú principal. Asegúrese de haber impreso el reporte si lo necesita.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        viewModel?.limpiarSesionChecklist()
+                        searchQuery = ""
+                        placa = ""
+                        numeroUnidad = ""
+                        camion = ""
+                        voltaje = ""
+                        modeloUnidad = ""
+                        comentarios = ""
+                        sugerenciasFinales = ""
+                        fotosCapturadas.clear()
+                        onBackClick()
+                    }
+                ) {
+                    Text("SÍ, FINALIZAR", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("CANCELAR", color = Color.White.copy(alpha = 0.7f))
+                }
+            },
+            containerColor = Color(0xFF37474F), // Gris oscuro profesional
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
+
     // Configuracion de la cámara con compresión
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -125,8 +166,7 @@ fun CheckListScreen(
             if (unidadEncontrada != null) {
                 placa = unidadEncontrada.placa
                 numeroUnidad = unidadEncontrada.numeroUnidad
-                camion = "${unidadEncontrada.marca} ${unidadEncontrada.modelo}"
-                modeloUnidad = unidadEncontrada.serie
+                modeloUnidad = "${unidadEncontrada.marca} ${unidadEncontrada.modelo}"
             }
         }
     }
@@ -240,11 +280,11 @@ fun CheckListScreen(
                 )
             }
 
-            // Campo para el Camión
+            // Campo para el Modelo de Unidad (Fila Completa)
             OutlinedTextField(
-                value = camion,
-                onValueChange = { camion = it },
-                label = { Text("Camión", color = Color.White.copy(alpha = 0.7f)) },
+                value = modeloUnidad,
+                onValueChange = { modeloUnidad = it },
+                label = { Text("Modelo de Unidad", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -258,7 +298,7 @@ fun CheckListScreen(
                 )
             )
 
-            // Fila para Voltaje y Modelo Unidad
+            // Fila para Voltaje y Camión
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -280,9 +320,9 @@ fun CheckListScreen(
                     )
                 )
                 OutlinedTextField(
-                    value = modeloUnidad,
-                    onValueChange = { modeloUnidad = it },
-                    label = { Text("Modelo Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                    value = camion,
+                    onValueChange = { camion = it },
+                    label = { Text("Camión", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -427,47 +467,70 @@ fun CheckListScreen(
                 }
             }
 
-            // Botón para Finalizar toda la Inspección
+            // CAMPO DE SUGERENCIAS FINALES
+            OutlinedTextField(
+                value = sugerenciasFinales,
+                onValueChange = { sugerenciasFinales = it },
+                label = { Text("Sugerencias Finales / Recomendaciones", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                )
+            )
+
+            // Botón para Generar PDF
             Button(
                 onClick = {
                     if (placa.isNotBlank()) {
-                        // Imprimir PDF con todos los hallazgos acumulados
                         if (hallazgos.isNotEmpty()) {
-                                PrintUtils.imprimirChecklist(
+                            PrintUtils.imprimirChecklist(
                                 context = context,
                                 placa = placa,
                                 unidad = numeroUnidad,
                                 camion = camion,
                                 voltaje = voltaje,
                                 modeloUnidad = modeloUnidad,
-                                hallazgos = hallazgos
+                                hallazgos = hallazgos,
+                                sugerencias = sugerenciasFinales
                             )
+                        } else {
+                            // Opcional: mostrar mensaje de que no hay hallazgos para imprimir
                         }
-
-                        // Limpiamos todo y regresamos
-                        viewModel?.limpiarSesionChecklist()
-                        searchQuery = ""
-                        placa = ""
-                        numeroUnidad = ""
-                        camion = ""
-                        voltaje = ""
-                        modeloUnidad = ""
-                        comentarios = ""
-                        fotosCapturadas.clear()
-                        onBackClick()
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = placa.isNotBlank(),
+                enabled = placa.isNotBlank() && hallazgos.isNotEmpty(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1B5E20), // Verde oscuro para indicar finalización
-                    contentColor = Color.White
+                    containerColor = Color(0xFF1B5E20), // Verde
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFF1B5E20).copy(alpha = 0.3f)
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("FINALIZAR INSPECCIÓN", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("IMPRIMIR REPORTE PDF", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+
+            // Botón para Finalizar (Limpiar y Salir)
+            OutlinedButton(
+                onClick = { showExitDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+            ) {
+                Text("FINALIZAR Y CERRAR", fontWeight = FontWeight.SemiBold)
             }
 
             // Espacio al final de la columna para que el scroll no corte el contenido
