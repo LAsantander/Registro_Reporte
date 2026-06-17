@@ -1,6 +1,7 @@
 package com.example.registro.ui.screens // Paquete donde se encuentra la pantalla
 
 import androidx.compose.foundation.background // Importación para manejar fondos
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.* // Importación para el manejo de layouts (Box, Column, Row, etc.)
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +14,10 @@ import com.example.registro.ui.theme.RegistroTheme // Importación del tema de l
 import androidx.compose.material3.* // Importación de componentes de Material Design 3
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment // Importación para alineación de elementos
@@ -26,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign // Importación para alinear texto
 
 import com.example.registro.ui.UnitViewModel
+import com.example.registro.data.TemperatureEntity
 import com.example.registro.ui.utils.PrintUtils
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
@@ -58,6 +63,9 @@ fun TemperatureTakingScreen(
     // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
     val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+    val registrosRecientes by (viewModel?.registrosRecientes?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
+
+    var recordToDelete by remember { mutableStateOf<Int?>(null) }
 
     // Mostrar Alerta si hay un error
     if (errorMessage != null) {
@@ -88,6 +96,33 @@ fun TemperatureTakingScreen(
                 }
             },
             containerColor = Color(0xFF1B5E20), // Verde para éxito
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
+
+    // Confirmación para eliminar
+    if (recordToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { recordToDelete = null },
+            title = { Text("¿Eliminar registro?") },
+            text = { Text("Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel?.eliminarTemperatura(recordToDelete!!)
+                        recordToDelete = null
+                    }
+                ) {
+                    Text("ELIMINAR", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { recordToDelete = null }) {
+                    Text("CANCELAR", color = Color.White.copy(alpha = 0.7f))
+                }
+            },
+            containerColor = Color(0xFFB71C1C),
             titleContentColor = Color.White,
             textContentColor = Color.White
         )
@@ -364,7 +399,9 @@ fun TemperatureTakingScreen(
                         PrintUtils.imprimirReporteDelDia(context, registros)
                     }
                 },
-                modifier = Modifier.fillMaxWidth(0.4f).height(46.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.55f) // Aumentado de 0.4f a 0.55f para asegurar espacio
+                    .height(48.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF52A8EE),
                     contentColor = Color.White,
@@ -372,7 +409,49 @@ fun TemperatureTakingScreen(
                     disabledContentColor = Color.White.copy(alpha = 0.5f)
                 )
             ) {
-                Text(text = "IMPRIMIR", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "IMPRIMIR", 
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1 // Evita que el texto intente dividirse en dos líneas
+                )
+            }
+
+            // LISTA DE REGISTROS RECIENTES
+            if (registrosRecientes.isNotEmpty()) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    color = Color.White.copy(alpha = 0.2f)
+                )
+                
+                Text(
+                    "Últimos registros de hoy:",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
+
+                registrosRecientes.forEach { reg ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("${reg.placa} - Unid: ${reg.numeroUnidad}", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text("Temps: ${reg.temp1}${reg.unidadTemp} / ${reg.temp2}${reg.unidadTemp}", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+                            }
+                            IconButton(onClick = { recordToDelete = reg.id }) {
+                                Icon(Icons.Default.Delete, "Eliminar", tint = Color(0xFFE57373))
+                            }
+                        }
+                    }
+                }
             }
             
             // Margen final de seguridad

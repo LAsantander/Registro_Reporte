@@ -39,6 +39,12 @@ interface UnitDao {
     @Query("SELECT * FROM temperature_records WHERE fechaHora LIKE :todayDate || '%' ORDER BY id DESC")
     suspend fun getTemperaturesByDate(todayDate: String): List<TemperatureEntity>
 
+    @Query("SELECT * FROM temperature_records WHERE fechaHora LIKE :todayDate || '%' ORDER BY id DESC LIMIT 5")
+    fun getRecentTemperatures(todayDate: String): Flow<List<TemperatureEntity>>
+
+    @Query("DELETE FROM temperature_records WHERE id = :id")
+    suspend fun deleteTemperatureById(id: Int)
+
     // --- Operaciones de Respaldo (Backup) ---
     @Query("SELECT * FROM refrigerated_units")
     suspend fun getAllUnitsList(): List<UnitEntity>

@@ -15,6 +15,9 @@ import android.content.Context
 import android.net.Uri
 import com.example.registro.ui.utils.BackupUtils
 
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+
 /**
  * El ViewModel es el encargado de gestionar los datos para la interfaz de usuario.
  * Ahora incluye manejo de errores para alertas de duplicados.
@@ -28,6 +31,11 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     // Estado para manejar mensajes de éxito
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage
+
+    // Observar los últimos 5 registros de temperatura del día actual
+    val registrosRecientes: StateFlow<List<com.example.registro.data.TemperatureEntity>> = 
+        unitDao.getRecentTemperatures(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()))
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
      * Función para insertar una nueva unidad con validación de duplicados.
@@ -167,6 +175,20 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     suspend fun obtenerRegistrosDelDia(): List<com.example.registro.data.TemperatureEntity> {
         val hoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
         return unitDao.getTemperaturesByDate(hoy)
+    }
+
+    /**
+     * Elimina un registro de temperatura por su ID.
+     */
+    fun eliminarTemperatura(id: Int) {
+        viewModelScope.launch {
+            try {
+                unitDao.deleteTemperatureById(id)
+                _successMessage.value = "Registro eliminado correctamente."
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar el registro: ${e.message}"
+            }
+        }
     }
 
     /**

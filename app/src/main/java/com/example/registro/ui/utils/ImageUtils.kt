@@ -1,10 +1,12 @@
 package com.example.registro.ui.utils
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 
 object ImageUtils {
     /**
@@ -27,23 +29,55 @@ object ImageUtils {
             // 3. Decodificar el Bitmap con el tamaño reducido
             val bitmap = BitmapFactory.decodeFile(file.absolutePath, options) ?: return null
 
-            // 4. Crear el archivo de destino (con prefijo 'C_')
-            val compressedFile = File(file.parent, "C_${file.name}")
+            saveBitmapToFile(bitmap, file, "C_${file.name}")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Comprime y redimensiona una imagen desde una Uri (Galería).
+     */
+    fun compressImageFromUri(context: Context, uri: Uri, maxWidth: Int = 1600, maxHeight: Int = 1600): Uri? {
+        return try {
+            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeStream(inputStream, null, options)
+            inputStream?.close()
+
+            options.inSampleSize = calculateInSampleSize(options, maxWidth, maxHeight)
+            options.inJustDecodeBounds = false
+
+            val inputStream2 = context.contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream2, null, options) ?: return null
+            inputStream2?.close()
+
+            val tempFile = File(context.cacheDir, "GAL_${System.currentTimeMillis()}.jpg")
+            saveBitmapToFile(bitmap, tempFile, tempFile.name)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun saveBitmapToFile(bitmap: Bitmap, originalFile: File, newName: String): Uri? {
+        return try {
+            val compressedFile = File(originalFile.parent, newName)
             val out = FileOutputStream(compressedFile)
-            
-            // 5. Comprimir a JPEG con calidad 90% (Mejor calidad para impresión)
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
             out.flush()
             out.close()
-            
-            // 6. Eliminar el archivo original pesado para liberar espacio
-            if (file.exists() && file.absolutePath != compressedFile.absolutePath) {
-                file.delete()
+
+            // Eliminar original si es del sistema (cámara)
+            if (originalFile.exists() && originalFile.absolutePath != compressedFile.absolutePath && originalFile.name.startsWith("IMG_")) {
+                originalFile.delete()
             }
 
             Uri.fromFile(compressedFile)
         } catch (e: Exception) {
-            e.printStackTrace()
             null
         }
     }

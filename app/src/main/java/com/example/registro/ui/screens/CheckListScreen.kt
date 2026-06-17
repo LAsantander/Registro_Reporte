@@ -8,10 +8,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState // Importa el estado para recordar la posición del scroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll // Importa la capacidad de hacer scroll vertical
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.* // Importa los componentes de Material Design 3
 import androidx.compose.runtime.* // Importa las herramientas de manejo de estado (remember, mutableStateOf)
@@ -24,6 +26,8 @@ import androidx.compose.ui.graphics.Color // Importa la clase para manejar color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight // Importa estilos de grosor de fuente
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview // Importa la capacidad de ver previas en el IDE
 import androidx.compose.ui.unit.dp // Importa unidades de medida dp (densidad de píxeles)
 import androidx.compose.ui.unit.sp // Importa unidades de medida sp (para texto)
@@ -33,6 +37,7 @@ import com.example.registro.ui.utils.ImageUtils
 import com.example.registro.ui.utils.PrintUtils
 import com.example.registro.ui.theme.RegistroTheme // Importa el tema visual del proyecto
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import coil.compose.AsyncImage
@@ -158,6 +163,18 @@ fun CheckListScreen(
         }
     }
 
+    // Configuración del selector de galería múltiple
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        uris.forEach { uri ->
+            val compressedUri = ImageUtils.compressImageFromUri(context, uri)
+            if (compressedUri != null) {
+                fotosCapturadas.add(compressedUri)
+            }
+        }
+    }
+
 
     // Lógica de búsqueda automática
     LaunchedEffect(searchQuery) {
@@ -230,6 +247,7 @@ fun CheckListScreen(
                     Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
                 },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -258,6 +276,7 @@ fun CheckListScreen(
                     label = { Text("Placa", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
@@ -271,6 +290,7 @@ fun CheckListScreen(
                     label = { Text("N.Unidad", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
@@ -287,6 +307,7 @@ fun CheckListScreen(
                 label = { Text("Modelo de Unidad", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -305,10 +326,16 @@ fun CheckListScreen(
             ) {
                 OutlinedTextField(
                     value = voltaje,
-                    onValueChange = { voltaje = it },
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                            voltaje = newValue
+                        }
+                    },
                     label = { Text("Voltaje", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
@@ -325,6 +352,7 @@ fun CheckListScreen(
                     label = { Text("Camión", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
@@ -369,6 +397,9 @@ fun CheckListScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(100.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences
+                        ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
@@ -412,6 +443,26 @@ fun CheckListScreen(
                                 Icon(
                                     imageVector = Icons.Default.AddAPhoto,
                                     contentDescription = "Tomar Foto",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+
+                        // Botón para seleccionar de la galería
+                        Card(
+                            onClick = {
+                                galleryLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            modifier = Modifier.size(70.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoLibrary,
+                                    contentDescription = "Elegir de Galería",
                                     tint = Color.White
                                 )
                             }
@@ -475,6 +526,9 @@ fun CheckListScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
