@@ -188,6 +188,7 @@ fun TemperatureTakingScreen(
                     Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
                 },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -212,6 +213,7 @@ fun TemperatureTakingScreen(
                 label = { Text("Placa", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -230,6 +232,7 @@ fun TemperatureTakingScreen(
                 label = { Text("Numero de Unidad", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -289,6 +292,7 @@ fun TemperatureTakingScreen(
                     label = { Text("Temp 1", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -311,6 +315,7 @@ fun TemperatureTakingScreen(
                     label = { Text("Temp 2", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -343,6 +348,7 @@ fun TemperatureTakingScreen(
                     .height(130.dp), // Aumentado para el contador
                 singleLine = false,
                 maxLines = 3,
+                shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
                 ),
