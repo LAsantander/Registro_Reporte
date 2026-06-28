@@ -114,11 +114,36 @@ object PrintUtils {
                     canvas.drawText("Observación #${index + 1}:", margin, currentY, titlePaint.apply { textSize = 12f })
                     currentY += 20f
                     
-                    // Comentario (Manejo de saltos de línea básico)
-                    val lines = comentario.chunked(70)
-                    lines.forEach { line ->
+                    // Comentario (Manejo de saltos de línea dinámico para ocupar todo el ancho)
+                    val maxWidth = 500f // Ancho máximo permitido para el texto
+                    var textToDraw = comentario
+                    while (textToDraw.isNotEmpty()) {
+                        // breakText mide cuántos caracteres caben en el ancho dado
+                        val charsCount = bodyPaint.breakText(textToDraw, true, maxWidth, null)
+                        
+                        var end = charsCount
+                        // Si no es el final del texto, buscamos el último espacio para no cortar palabras
+                        if (charsCount < textToDraw.length) {
+                            val lastSpace = textToDraw.substring(0, charsCount).lastIndexOf(' ')
+                            if (lastSpace > 0) {
+                                end = lastSpace
+                            }
+                        }
+                        
+                        val line = textToDraw.substring(0, end).trim()
                         canvas.drawText(line, margin + 10f, currentY, bodyPaint)
                         currentY += 15f
+                        textToDraw = textToDraw.substring(end).trim()
+
+                        // Si el texto es muy largo y llegamos al final de la página
+                        if (currentY > 800f && textToDraw.isNotEmpty()) {
+                            pdfDocument.finishPage(page)
+                            currentPageNumber++
+                            pageInfo = PdfDocument.PageInfo.Builder(595, 842, currentPageNumber).create()
+                            page = pdfDocument.startPage(pageInfo)
+                            canvas = page.canvas
+                            currentY = 50f
+                        }
                     }
 
                     // Fotos del hallazgo
@@ -193,10 +218,32 @@ object PrintUtils {
                     currentY += 20f
                     canvas.drawText("Sugerencias Finales / Recomendaciones:", margin, currentY, titlePaint.apply { textSize = 12f; color = Color.BLACK })
                     currentY += 20f
-                    val lines = sugerencias.chunked(70)
-                    lines.forEach { line ->
+                    
+                    val maxWidth = 500f
+                    var textToDraw = sugerencias
+                    while (textToDraw.isNotEmpty()) {
+                        val charsCount = bodyPaint.breakText(textToDraw, true, maxWidth, null)
+                        var end = charsCount
+                        if (charsCount < textToDraw.length) {
+                            val lastSpace = textToDraw.substring(0, charsCount).lastIndexOf(' ')
+                            if (lastSpace > 0) {
+                                end = lastSpace
+                            }
+                        }
+                        
+                        val line = textToDraw.substring(0, end).trim()
                         canvas.drawText(line, margin + 10f, currentY, bodyPaint)
                         currentY += 15f
+                        textToDraw = textToDraw.substring(end).trim()
+
+                        if (currentY > 800f && textToDraw.isNotEmpty()) {
+                            pdfDocument.finishPage(page)
+                            currentPageNumber++
+                            pageInfo = PdfDocument.PageInfo.Builder(595, 842, currentPageNumber).create()
+                            page = pdfDocument.startPage(pageInfo)
+                            canvas = page.canvas
+                            currentY = 50f
+                        }
                     }
                 }
 
