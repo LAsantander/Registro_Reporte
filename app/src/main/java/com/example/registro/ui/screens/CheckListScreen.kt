@@ -540,11 +540,15 @@ fun CheckListScreen(
                 )
             )
 
-            // Botón para Generar PDF
-            Button(
-                onClick = {
-                    if (placa.isNotBlank()) {
-                        if (hallazgos.isNotEmpty()) {
+            // Fila de Botones: Imprimir y Compartir
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Botón para Generar PDF (Imprimir)
+                Button(
+                    onClick = {
+                        if (placa.isNotBlank() && hallazgos.isNotEmpty()) {
                             PrintUtils.imprimirChecklist(
                                 context = context,
                                 placa = placa,
@@ -555,23 +559,47 @@ fun CheckListScreen(
                                 hallazgos = hallazgos,
                                 sugerencias = sugerenciasFinales
                             )
-                        } else {
-                            // Opcional: mostrar mensaje de que no hay hallazgos para imprimir
                         }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = placa.isNotBlank() && hallazgos.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1B5E20), // Verde
-                    contentColor = Color.White,
-                    disabledContainerColor = Color(0xFF1B5E20).copy(alpha = 0.3f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("IMPRIMIR REPORTE PDF", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    },
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    enabled = placa.isNotBlank() && hallazgos.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1B5E20),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF1B5E20).copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("IMPRIMIR", fontWeight = FontWeight.Bold)
+                }
+
+                // Botón para Compartir PDF
+                Button(
+                    onClick = {
+                        if (placa.isNotBlank() && hallazgos.isNotEmpty()) {
+                            PrintUtils.compartirChecklist(
+                                context = context,
+                                placa = placa,
+                                unidad = numeroUnidad,
+                                camion = camion,
+                                voltaje = voltaje,
+                                modeloUnidad = modeloUnidad,
+                                hallazgos = hallazgos,
+                                sugerencias = sugerenciasFinales
+                            )
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    enabled = placa.isNotBlank() && hallazgos.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF52A8EE),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("COMPARTIR", fontWeight = FontWeight.Bold)
+                }
             }
 
             // Botón para Finalizar (Limpiar y Salir)

@@ -397,29 +397,50 @@ fun TemperatureTakingScreen(
                 Text(text = "GUARDAR", style = MaterialTheme.typography.titleMedium)
             }
 
-            // Botón IMPRIMIR (Reporte del día)
-            Button(
-                onClick ={
-                    coroutineScope.launch {
-                        val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
-                        PrintUtils.imprimirReporteDelDia(context, registros)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth(0.55f) // Aumentado de 0.4f a 0.55f para asegurar espacio
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF52A8EE),
-                    contentColor = Color.White,
-                    disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
-                    disabledContentColor = Color.White.copy(alpha = 0.5f)
-                )
+            // Fila de Botones: Imprimir y Compartir
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = "IMPRIMIR", 
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1 // Evita que el texto intente dividirse en dos líneas
-                )
+                // Botón IMPRIMIR (Reporte del día)
+                Button(
+                    onClick ={
+                        coroutineScope.launch {
+                            val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
+                            PrintUtils.imprimirReporteDelDia(context, registros)
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF52A8EE),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
+                        disabledContentColor = Color.White.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text(text = "IMPRIMIR", style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                }
+
+                // Botón COMPARTIR (Reporte del día)
+                Button(
+                    onClick ={
+                        coroutineScope.launch {
+                            val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
+                            if (registros.isNotEmpty()) {
+                                PrintUtils.compartirReporteDiario(context, registros)
+                            }
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF52A8EE),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
+                        disabledContentColor = Color.White.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text(text = "COMPARTIR", style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                }
             }
 
             // LISTA DE REGISTROS RECIENTES
