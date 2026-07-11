@@ -14,7 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.* // Importa los componentes de Material Design 3
 import androidx.compose.runtime.* // Importa las herramientas de manejo de estado (remember, mutableStateOf)
 import androidx.compose.ui.Alignment // Importa alineaciones para los elementos
@@ -207,11 +209,14 @@ fun CheckListScreen(
                 .align(Alignment.TopStart)
                 .statusBarsPadding()
                 .padding(16.dp)
+                .size(44.dp) // Tamaño del botón
+                .background(Color(0xFF52A8EE), shape = RoundedCornerShape(10.dp)) // Fondo azul redondeado
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Regresar",
-                tint = Color.White
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
             )
         }
 
@@ -543,10 +548,11 @@ fun CheckListScreen(
             // Fila de Botones: Imprimir y Compartir
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.Center, // Centramos los botones
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botón para Generar PDF (Imprimir)
-                Button(
+                // Botón IMPRIMIR
+                IconButton(
                     onClick = {
                         if (placa.isNotBlank() && hallazgos.isNotEmpty()) {
                             PrintUtils.imprimirChecklist(
@@ -561,20 +567,21 @@ fun CheckListScreen(
                             )
                         }
                     },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    enabled = placa.isNotBlank() && hallazgos.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1B5E20),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF1B5E20).copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            if (placa.isNotBlank() && hallazgos.isNotEmpty()) Color(0xFF1B5E20) 
+                            else Color(0xFF1B5E20).copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
                 ) {
-                    Text("IMPRIMIR", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Print, contentDescription = "Imprimir", tint = Color.White)
                 }
 
-                // Botón para Compartir PDF
-                Button(
+                Spacer(modifier = Modifier.width(24.dp))
+
+                // Botón COMPARTIR
+                IconButton(
                     onClick = {
                         if (placa.isNotBlank() && hallazgos.isNotEmpty()) {
                             PrintUtils.compartirChecklist(
@@ -589,16 +596,15 @@ fun CheckListScreen(
                             )
                         }
                     },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    enabled = placa.isNotBlank() && hallazgos.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF52A8EE),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            if (placa.isNotBlank() && hallazgos.isNotEmpty()) Color(0xFF52A8EE)
+                            else Color(0xFF52A8EE).copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
                 ) {
-                    Text("COMPARTIR", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Share, contentDescription = "Compartir", tint = Color.White)
                 }
             }
 

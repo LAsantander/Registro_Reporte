@@ -15,7 +15,9 @@ import androidx.compose.material3.* // Importación de componentes de Material D
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
@@ -150,7 +152,13 @@ fun TemperatureTakingScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Toma de Temperatura", color = Color.White) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .size(44.dp)
+                            .background(Color(0xFF52A8EE), shape = RoundedCornerShape(10.dp))
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Regresar",
@@ -384,7 +392,7 @@ fun TemperatureTakingScreen(
                         }
                     )
                 },
-                modifier = Modifier.fillMaxWidth(0.7f).height(50.dp),
+                modifier = Modifier.fillMaxWidth(0.45f).height(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF52A8EE),
                     contentColor = Color.White,
@@ -397,32 +405,33 @@ fun TemperatureTakingScreen(
                 Text(text = "GUARDAR", style = MaterialTheme.typography.titleMedium)
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Fila de Botones: Imprimir y Compartir
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botón IMPRIMIR (Reporte del día)
-                Button(
+                // Botón IMPRIMIR
+                IconButton(
                     onClick ={
                         coroutineScope.launch {
                             val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
                             PrintUtils.imprimirReporteDelDia(context, registros)
                         }
                     },
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF52A8EE),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
-                        disabledContentColor = Color.White.copy(alpha = 0.5f)
-                    )
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(Color(0xFF52A8EE), shape = RoundedCornerShape(12.dp))
                 ) {
-                    Text(text = "IMPRIMIR", style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    Icon(Icons.Default.Print, contentDescription = "Imprimir", tint = Color.White)
                 }
 
-                // Botón COMPARTIR (Reporte del día)
-                Button(
+                Spacer(modifier = Modifier.width(24.dp))
+
+                // Botón COMPARTIR
+                IconButton(
                     onClick ={
                         coroutineScope.launch {
                             val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
@@ -431,15 +440,11 @@ fun TemperatureTakingScreen(
                             }
                         }
                     },
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF52A8EE),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
-                        disabledContentColor = Color.White.copy(alpha = 0.5f)
-                    )
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(Color(0xFF52A8EE), shape = RoundedCornerShape(12.dp))
                 ) {
-                    Text(text = "COMPARTIR", style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    Icon(Icons.Default.Share, contentDescription = "Compartir", tint = Color.White)
                 }
             }
 
