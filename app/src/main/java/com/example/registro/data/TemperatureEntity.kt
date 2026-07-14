@@ -17,8 +17,10 @@ data class TemperatureEntity(
     val placa: String,
     val numeroUnidad: String,
     val temp1: String,
+    val isTemp1Alert: Boolean = false, // Marca si la Temp 1 es crítica (rojo)
     val temp2: String,
-    val unidadTemp: String = "C", // Nueva columna para C o F
+    val isTemp2Alert: Boolean = false, // Marca si la Temp 2 es crítica (rojo)
+    val unidadTemp: String = "C",
     val comentarios: String,
     val fechaHora: String = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 )

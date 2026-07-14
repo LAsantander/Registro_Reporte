@@ -600,8 +600,24 @@ object PrintUtils {
                         canvas.drawText(hora, marginStart, currentY, paint)
                         canvas.drawText(reg.placa, 70f, currentY, paint)
                         canvas.drawText(reg.numeroUnidad, 135f, currentY, paint)
+
+                        // Dibujar Temp 1 (con color si es alerta)
+                        if (reg.isTemp1Alert) {
+                            paint.color = Color.RED
+                            paint.isFakeBoldText = true
+                        }
                         canvas.drawText("${reg.temp1}${reg.unidadTemp}", 200f, currentY, paint)
+                        paint.color = Color.BLACK // Restaurar
+                        paint.isFakeBoldText = false
+
+                        // Dibujar Temp 2 (con color si es alerta)
+                        if (reg.isTemp2Alert) {
+                            paint.color = Color.RED
+                            paint.isFakeBoldText = true
+                        }
                         canvas.drawText("${reg.temp2}${reg.unidadTemp}", 255f, currentY, paint)
+                        paint.color = Color.BLACK // Restaurar
+                        paint.isFakeBoldText = false
                         
                         val comentarioLimpio = reg.comentarios.replace("\n", " ")
                         canvas.drawText(comentarioLimpio, 315f, currentY, paint)

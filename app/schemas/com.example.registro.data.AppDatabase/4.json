@@ -1,0 +1,153 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "aa9e247fa9b1a8972c597a337a2d4f22",
+    "entities": [
+      {
+        "tableName": "refrigerated_units",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `placa` TEXT NOT NULL, `numeroUnidad` TEXT NOT NULL, `marca` TEXT NOT NULL, `modelo` TEXT NOT NULL, `serie` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "placa",
+            "columnName": "placa",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numeroUnidad",
+            "columnName": "numeroUnidad",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "marca",
+            "columnName": "marca",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelo",
+            "columnName": "modelo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serie",
+            "columnName": "serie",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_refrigerated_units_placa",
+            "unique": true,
+            "columnNames": [
+              "placa"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_refrigerated_units_placa` ON `${TABLE_NAME}` (`placa`)"
+          },
+          {
+            "name": "index_refrigerated_units_numeroUnidad",
+            "unique": true,
+            "columnNames": [
+              "numeroUnidad"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_refrigerated_units_numeroUnidad` ON `${TABLE_NAME}` (`numeroUnidad`)"
+          }
+        ]
+      },
+      {
+        "tableName": "temperature_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `placa` TEXT NOT NULL, `numeroUnidad` TEXT NOT NULL, `temp1` TEXT NOT NULL, `isTemp1Alert` INTEGER NOT NULL, `temp2` TEXT NOT NULL, `isTemp2Alert` INTEGER NOT NULL, `unidadTemp` TEXT NOT NULL, `comentarios` TEXT NOT NULL, `fechaHora` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "placa",
+            "columnName": "placa",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numeroUnidad",
+            "columnName": "numeroUnidad",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "temp1",
+            "columnName": "temp1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTemp1Alert",
+            "columnName": "isTemp1Alert",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "temp2",
+            "columnName": "temp2",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTemp2Alert",
+            "columnName": "isTemp2Alert",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unidadTemp",
+            "columnName": "unidadTemp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "comentarios",
+            "columnName": "comentarios",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaHora",
+            "columnName": "fechaHora",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aa9e247fa9b1a8972c597a337a2d4f22')"
+    ]
+  }
+}

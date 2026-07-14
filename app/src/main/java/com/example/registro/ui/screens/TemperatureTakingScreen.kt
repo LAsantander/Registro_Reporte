@@ -14,6 +14,7 @@ import com.example.registro.ui.theme.RegistroTheme // Importación del tema de l
 import androidx.compose.material3.* // Importación de componentes de Material Design 3
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Search
@@ -55,8 +56,10 @@ fun TemperatureTakingScreen(
     var numeroUnidad by remember { mutableStateOf("") }
     // Estado para almacenar el valor de la primera temperatura
     var temp1 by remember { mutableStateOf("") }
+    var isTemp1Alert by remember { mutableStateOf(false) }
     // Estado para almacenar el valor de la segunda temperatura
     var temp2 by remember { mutableStateOf("") }
+    var isTemp2Alert by remember { mutableStateOf(false) }
     // Estado para almacenar los comentarios adicionales
     var comments by remember { mutableStateOf("") }
     // Estado para la unidad de temperatura (C o F)
@@ -302,14 +305,23 @@ fun TemperatureTakingScreen(
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    trailingIcon = {
+                        IconButton(onClick = { isTemp1Alert = !isTemp1Alert }) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Alerta",
+                                tint = if (isTemp1Alert) Color(0xFFE57373) else Color.White.copy(alpha = 0.3f)
+                            )
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                        cursorColor = Color.White,
-                        focusedLabelColor = Color.White,
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                        focusedTextColor = if (isTemp1Alert) Color(0xFFE57373) else Color.White,
+                        unfocusedTextColor = if (isTemp1Alert) Color(0xFFE57373) else Color.White,
+                        focusedBorderColor = if (isTemp1Alert) Color(0xFFE57373) else Color.White,
+                        unfocusedBorderColor = if (isTemp1Alert) Color(0xFFE57373).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f),
+                        cursorColor = if (isTemp1Alert) Color(0xFFE57373) else Color.White,
+                        focusedLabelColor = if (isTemp1Alert) Color(0xFFE57373) else Color.White,
+                        unfocusedLabelColor = if (isTemp1Alert) Color(0xFFE57373).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
                     )
                 )
 
@@ -325,14 +337,23 @@ fun TemperatureTakingScreen(
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    trailingIcon = {
+                        IconButton(onClick = { isTemp2Alert = !isTemp2Alert }) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Alerta",
+                                tint = if (isTemp2Alert) Color(0xFFE57373) else Color.White.copy(alpha = 0.3f)
+                            )
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                        cursorColor = Color.White,
-                        focusedLabelColor = Color.White,
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                        focusedTextColor = if (isTemp2Alert) Color(0xFFE57373) else Color.White,
+                        unfocusedTextColor = if (isTemp2Alert) Color(0xFFE57373) else Color.White,
+                        focusedBorderColor = if (isTemp2Alert) Color(0xFFE57373) else Color.White,
+                        unfocusedBorderColor = if (isTemp2Alert) Color(0xFFE57373).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f),
+                        cursorColor = if (isTemp2Alert) Color(0xFFE57373) else Color.White,
+                        focusedLabelColor = if (isTemp2Alert) Color(0xFFE57373) else Color.White,
+                        unfocusedLabelColor = if (isTemp2Alert) Color(0xFFE57373).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
                     )
                 )
             }
@@ -380,13 +401,16 @@ fun TemperatureTakingScreen(
                         placa = vehicleId,
                         numeroUnidad = numeroUnidad,
                         temp1 = temp1,
+                        isTemp1Alert = isTemp1Alert,
                         temp2 = temp2,
+                        isTemp2Alert = isTemp2Alert,
                         unidadTemp = tempUnit,
                         comentarios = comments,
                         onSuccess = {
                             // Limpiar campos tras guardar
                             searchQuery = ""; vehicleId = ""; numeroUnidad = ""
                             temp1 = ""; temp2 = ""; comments = ""; tempUnit = "C"
+                            isTemp1Alert = false; isTemp2Alert = false
                             // Devolver el foco a la barra de búsqueda
                             focusRequester.requestFocus()
                         }
@@ -476,7 +500,19 @@ fun TemperatureTakingScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("${reg.placa} - Unid: ${reg.numeroUnidad}", color = Color.White, fontWeight = FontWeight.SemiBold)
-                                Text("Temps: ${reg.temp1}${reg.unidadTemp} / ${reg.temp2}${reg.unidadTemp}", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+                                Row {
+                                    Text(
+                                        text = "T1: ${reg.temp1}${reg.unidadTemp}", 
+                                        color = if (reg.isTemp1Alert) Color(0xFFE57373) else Color.White.copy(alpha = 0.7f), 
+                                        fontSize = 13.sp
+                                    )
+                                    Text(" / ", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+                                    Text(
+                                        text = "T2: ${reg.temp2}${reg.unidadTemp}", 
+                                        color = if (reg.isTemp2Alert) Color(0xFFE57373) else Color.White.copy(alpha = 0.7f), 
+                                        fontSize = 13.sp
+                                    )
+                                }
                             }
                             IconButton(onClick = { recordToDelete = reg.id }) {
                                 Icon(Icons.Default.Delete, "Eliminar", tint = Color(0xFFE57373))

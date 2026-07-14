@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 @Database(
     entities = [UnitEntity::class, TemperatureEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,10 +23,18 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        // Migración de versión 2 a 3: Añade la columna 'unidadTemp' sin borrar los datos
+        // Migración de versión 2 a 3: Añade la columna 'unidadTemp'
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE temperature_records ADD COLUMN unidadTemp TEXT NOT NULL DEFAULT 'C'")
+            }
+        }
+
+        // Migración de versión 3 a 4: Añade columnas de alerta para temperaturas
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE temperature_records ADD COLUMN isTemp1Alert INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE temperature_records ADD COLUMN isTemp2Alert INTEGER NOT NULL DEFAULT 0")
             }
         }
 
@@ -37,7 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "registro_database"
                 )
-                .addMigrations(MIGRATION_2_3) // Aplicamos la migración manual segura
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4) // Aplicamos las migraciones manuales seguras
                 // Ya NO usamos fallbackToDestructiveMigration() para proteger los datos
                 .build()
                 INSTANCE = instance

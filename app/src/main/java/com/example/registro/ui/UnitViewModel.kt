@@ -130,7 +130,9 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
         placa: String,
         numeroUnidad: String,
         temp1: String,
+        isTemp1Alert: Boolean,
         temp2: String,
+        isTemp2Alert: Boolean,
         unidadTemp: String,
         comentarios: String,
         onSuccess: () -> Unit
@@ -149,7 +151,9 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
                     placa = placa.uppercase().trim(),
                     numeroUnidad = numeroUnidad.trim(),
                     temp1 = temp1,
+                    isTemp1Alert = isTemp1Alert,
                     temp2 = temp2,
+                    isTemp2Alert = isTemp2Alert,
                     unidadTemp = unidadTemp,
                     comentarios = comentarios
                 )
