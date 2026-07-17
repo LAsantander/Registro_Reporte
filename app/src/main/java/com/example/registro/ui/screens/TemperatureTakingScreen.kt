@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign // Importación para alinear texto
 
 import com.example.registro.ui.UnitViewModel
+import com.example.registro.ui.Jornada
 import com.example.registro.data.TemperatureEntity
 import com.example.registro.ui.utils.PrintUtils
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +48,10 @@ fun TemperatureTakingScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+
+    // Estado para el diálogo de selección de reporte
+    var showPrintDialog by remember { mutableStateOf(false) }
+    var isShareMode by remember { mutableStateOf(false) } // true para compartir, false para imprimir
 
     // Estado para la barra de búsqueda superior
     var searchQuery by remember { mutableStateOf("") }
@@ -71,6 +76,89 @@ fun TemperatureTakingScreen(
     val registrosRecientes by (viewModel?.registrosRecientes?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
 
     var recordToDelete by remember { mutableStateOf<Int?>(null) }
+
+    // Diálogo de Selección de Reporte
+    if (showPrintDialog) {
+        val jornadaActual = Jornada.obtenerActual()
+        AlertDialog(
+            onDismissRequest = { showPrintDialog = false },
+            title = {
+                Text(
+                    text = if (isShareMode) "Compartir Reporte" else "Imprimir Reporte",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Selecciona el alcance del reporte:",
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Opción 1: Jornada Actual
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
+                                val filtrados = viewModel?.filtrarRegistrosPorJornada(registros, jornadaActual) ?: emptyList()
+                                val titulo = "Reporte Temperaturas - Jornada ${jornadaActual.nombre}"
+                                if (isShareMode) {
+                                    PrintUtils.compartirReporteDiario(context, filtrados, titulo)
+                                } else {
+                                    PrintUtils.imprimirReporteDelDia(context, filtrados, titulo)
+                                }
+                                showPrintDialog = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("SOLO JORNADA ${jornadaActual.nombre.uppercase()}")
+                    }
+
+                    // Opción 2: Día Completo
+                    OutlinedButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
+                                val titulo = "Reporte Diario de Temperaturas"
+                                if (isShareMode) {
+                                    PrintUtils.compartirReporteDiario(context, registros, titulo)
+                                } else {
+                                    PrintUtils.imprimirReporteDelDia(context, registros, titulo)
+                                }
+                                showPrintDialog = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF52A8EE)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF52A8EE)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("DÍA COMPLETO")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showPrintDialog = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("CANCELAR", color = Color.Gray, textAlign = TextAlign.Center)
+                }
+            }
+        )
+    }
 
     // Mostrar Alerta si hay un error
     if (errorMessage != null) {
@@ -440,10 +528,8 @@ fun TemperatureTakingScreen(
                 // Botón IMPRIMIR
                 IconButton(
                     onClick ={
-                        coroutineScope.launch {
-                            val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
-                            PrintUtils.imprimirReporteDelDia(context, registros)
-                        }
+                        isShareMode = false
+                        showPrintDialog = true
                     },
                     modifier = Modifier
                         .size(56.dp)
@@ -457,12 +543,8 @@ fun TemperatureTakingScreen(
                 // Botón COMPARTIR
                 IconButton(
                     onClick ={
-                        coroutineScope.launch {
-                            val registros = viewModel?.obtenerRegistrosDelDia() ?: emptyList()
-                            if (registros.isNotEmpty()) {
-                                PrintUtils.compartirReporteDiario(context, registros)
-                            }
-                        }
+                        isShareMode = true
+                        showPrintDialog = true
                     },
                     modifier = Modifier
                         .size(56.dp)

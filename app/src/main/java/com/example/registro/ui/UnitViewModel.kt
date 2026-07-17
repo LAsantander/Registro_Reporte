@@ -17,6 +17,27 @@ import com.example.registro.ui.utils.BackupUtils
 
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import java.util.Calendar
+
+/**
+ * Representa las jornadas de trabajo disponibles.
+ */
+enum class Jornada(val nombre: String, val horaInicio: Int, val horaFin: Int) {
+    MANANA("Mañana", 6, 13),
+    TARDE("Tarde", 14, 21),
+    NOCHE("Noche", 22, 5);
+
+    companion object {
+        fun obtenerActual(): Jornada {
+            val horaActual = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            return when (horaActual) {
+                in 6..13 -> MANANA
+                in 14..21 -> TARDE
+                else -> NOCHE
+            }
+        }
+    }
+}
 
 /**
  * El ViewModel es el encargado de gestionar los datos para la interfaz de usuario.
@@ -36,6 +57,15 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     val registrosRecientes: StateFlow<List<com.example.registro.data.TemperatureEntity>> = 
         unitDao.getRecentTemperatures(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()))
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Observar reportes de trabajo recientes
+    val reportesTrabajoRecientes: StateFlow<List<com.example.registro.data.WorkReportEntity>> = 
+        unitDao.getRecentWorkReports()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Estado para el historial de trabajo filtrado por una unidad específica
+    private val _historialTrabajoFiltrado = MutableStateFlow<List<com.example.registro.data.WorkReportEntity>>(emptyList())
+    val historialTrabajoFiltrado: StateFlow<List<com.example.registro.data.WorkReportEntity>> = _historialTrabajoFiltrado
 
     /**
      * Función para insertar una nueva unidad con validación de duplicados.
@@ -182,6 +212,84 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
     }
 
     /**
+     * Filtra una lista de registros por una jornada específica.
+     */
+    fun filtrarRegistrosPorJornada(
+        registros: List<com.example.registro.data.TemperatureEntity>,
+        jornada: Jornada
+    ): List<com.example.registro.data.TemperatureEntity> {
+        return registros.filter { reg ->
+            // El formato de fechaHora es "dd/MM/yyyy HH:mm:ss"
+            val partes = reg.fechaHora.split(" ")
+            if (partes.size < 2) return@filter false
+            
+            val hora = partes[1].split(":")[0].toIntOrNull() ?: return@filter false
+            
+            if (jornada == Jornada.NOCHE) {
+                // La noche abarca de 22:00 a 05:59 (cruza la medianoche)
+                hora >= 22 || hora <= 5
+            } else {
+                hora in jornada.horaInicio..jornada.horaFin
+            }
+        }
+    }
+
+    /**
+     * Guarda un reporte de trabajo.
+     */
+    fun guardarReporteTrabajo(
+        placa: String,
+        numeroUnidad: String,
+        tipoTrabajo: String,
+        descripcion: String,
+        tecnico: String,
+        repuestos: String,
+        onSuccess: () -> Unit
+    ) {
+        _errorMessage.value = null
+        _successMessage.value = null
+
+        if (placa.isBlank() || numeroUnidad.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
+            _errorMessage.value = "Por favor completa los campos obligatorios del reporte."
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val reporte = com.example.registro.data.WorkReportEntity(
+                    placa = placa.uppercase().trim(),
+                    numeroUnidad = numeroUnidad.trim(),
+                    tipoTrabajo = tipoTrabajo,
+                    descripcion = descripcion,
+                    tecnico = tecnico,
+                    repuestos = repuestos
+                )
+                unitDao.insertWorkReport(reporte)
+                _successMessage.value = "Reporte de trabajo guardado con éxito."
+                onSuccess()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al guardar el reporte: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Obtiene reportes de trabajo por placa y actualiza el estado del historial filtrado.
+     */
+    fun cargarHistorialPorPlaca(placa: String) {
+        viewModelScope.launch {
+            _historialTrabajoFiltrado.value = unitDao.getWorkReportsByUnit(placa.uppercase().trim())
+        }
+    }
+
+    /**
+     * Obtiene reportes de trabajo por placa.
+     */
+    suspend fun obtenerReportesPorUnidad(placa: String): List<com.example.registro.data.WorkReportEntity> {
+        return unitDao.getWorkReportsByUnit(placa.uppercase().trim())
+    }
+
+    /**
      * Elimina un registro de temperatura por su ID.
      */
     fun eliminarTemperatura(id: Int) {
@@ -244,11 +352,13 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
             try {
                 val units = unitDao.getAllUnitsList()
                 val temps = unitDao.getAllTemperaturesList()
+                val workReports = unitDao.getAllWorkReportsList()
                 val hoy = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
                 
                 val backup = BackupData(
                     units = units,
                     temperatures = temps,
+                    workReports = workReports,
                     exportDate = hoy
                 )
                 
@@ -267,7 +377,8 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
                     // Insertamos los datos en la base de datos (con estrategia REPLACE si ya existen)
                     unitDao.insertUnitsList(backup.units)
                     unitDao.insertTemperaturesList(backup.temperatures)
-                    _successMessage.value = "Respaldo importado con éxito. Se cargaron ${backup.units.size} unidades y ${backup.temperatures.size} registros."
+                    unitDao.insertWorkReportsList(backup.workReports)
+                    _successMessage.value = "Respaldo importado con éxito. Se cargaron ${backup.units.size} unidades, ${backup.temperatures.size} registros de temperatura y ${backup.workReports.size} reportes de trabajo."
                 } else {
                     _errorMessage.value = "El archivo de respaldo no es válido o está dañado."
                 }

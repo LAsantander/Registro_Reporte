@@ -13,6 +13,8 @@ import com.example.registro.ui.screens.HistoryScreen
 import com.example.registro.ui.screens.RegistryScreen
 import com.example.registro.ui.screens.SearchScreen
 import com.example.registro.ui.screens.TemperatureTakingScreen
+import com.example.registro.ui.screens.WorkHistoryScreen
+import com.example.registro.ui.screens.WorkReportScreen
 import com.example.registro.ui.theme.RegistroTheme
 
 @Composable
@@ -33,6 +35,8 @@ fun AppNavigation() {
                 onNavigateToTemperature = { navController.navigate("temperature") },
                 onNavigateToRegistry = { navController.navigate("registry") },
                 onNavigateToChecklist = { navController.navigate("checklist") },
+                onNavigateToWorkReport = { navController.navigate("work_report") },
+                onNavigateToWorkHistory = { navController.navigate("work_history") },
                 onNavigateToHistory = { navController.navigate("history") }
             )
         }
@@ -40,6 +44,22 @@ fun AppNavigation() {
         // Vista 2: Toma de Temperaturas
         composable("temperature") {
             TemperatureTakingScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // Vista de Reportes de Trabajo
+        composable("work_report") {
+            WorkReportScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // Vista de Historial de Trabajos
+        composable("work_history") {
+            WorkHistoryScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() }
             )
@@ -80,6 +100,8 @@ fun AppNavigationPreview() {
             onNavigateToTemperature = {},
             onNavigateToRegistry = {},
             onNavigateToChecklist = {},
+            onNavigateToWorkReport = {},
+            onNavigateToWorkHistory = {},
             onNavigateToHistory = {}
         )
     }

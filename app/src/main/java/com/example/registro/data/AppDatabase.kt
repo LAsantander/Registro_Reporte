@@ -11,8 +11,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * Clase principal de la base de datos Room.
  */
 @Database(
-    entities = [UnitEntity::class, TemperatureEntity::class],
-    version = 4,
+    entities = [UnitEntity::class, TemperatureEntity::class, WorkReportEntity::class],
+    version = 5,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -38,6 +38,24 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Migración de versión 4 a 5: Añade la tabla 'work_reports'
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `work_reports` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `placa` TEXT NOT NULL, 
+                        `numeroUnidad` TEXT NOT NULL, 
+                        `tipoTrabajo` TEXT NOT NULL, 
+                        `descripcion` TEXT NOT NULL, 
+                        `tecnico` TEXT NOT NULL, 
+                        `repuestos` TEXT NOT NULL, 
+                        `fechaHora` TEXT NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -45,7 +63,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "registro_database"
                 )
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4) // Aplicamos las migraciones manuales seguras
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5) // Aplicamos las migraciones manuales seguras
                 // Ya NO usamos fallbackToDestructiveMigration() para proteger los datos
                 .build()
                 INSTANCE = instance

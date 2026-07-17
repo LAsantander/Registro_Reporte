@@ -9,6 +9,7 @@ import com.example.registro.data.UnitEntity
 data class BackupData(
     val units: List<UnitEntity>,
     val temperatures: List<TemperatureEntity>,
+    val workReports: List<com.example.registro.data.WorkReportEntity> = emptyList(),
     val exportDate: String,
-    val appVersion: String = "1.0"
+    val appVersion: String = "1.1"
 )

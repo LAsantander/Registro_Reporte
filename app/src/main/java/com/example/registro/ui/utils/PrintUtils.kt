@@ -200,9 +200,14 @@ object PrintUtils {
     /**
      * Genera y comparte el reporte diario de temperaturas.
      */
-    fun compartirReporteDiario(context: Context, registros: List<TemperatureEntity>) {
+    fun compartirReporteDiario(
+        context: Context, 
+        registros: List<TemperatureEntity>,
+        tituloPersonalizado: String = "Reporte Diario de Temperaturas"
+    ) {
         val hoy = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
-        val fileName = "Reporte_Temperaturas_$hoy.pdf"
+        val suffix = tituloPersonalizado.replace(" ", "_")
+        val fileName = "Reporte_${suffix}_$hoy.pdf"
         val file = File(context.cacheDir, fileName)
 
         try {
@@ -222,7 +227,7 @@ object PrintUtils {
 
                 paint.textSize = 18f
                 paint.isFakeBoldText = true
-                canvas.drawText("Reporte Diario de Temperaturas", marginStart, currentY, paint)
+                canvas.drawText(tituloPersonalizado, marginStart, currentY, paint)
                 paint.textSize = 11f
                 paint.isFakeBoldText = false
                 currentY += 20f
@@ -250,10 +255,28 @@ object PrintUtils {
                     canvas.drawText(hora, marginStart, currentY, paint)
                     canvas.drawText(reg.placa, 70f, currentY, paint)
                     canvas.drawText(reg.numeroUnidad, 135f, currentY, paint)
+
+                    // Dibujar Temp 1 (con color si es alerta)
+                    if (reg.isTemp1Alert) {
+                        paint.color = Color.RED
+                        paint.isFakeBoldText = true
+                    }
                     canvas.drawText("${reg.temp1}${reg.unidadTemp}", 200f, currentY, paint)
+                    paint.color = Color.BLACK // Restaurar
+                    paint.isFakeBoldText = false
+
+                    // Dibujar Temp 2 (con color si es alerta)
+                    if (reg.isTemp2Alert) {
+                        paint.color = Color.RED
+                        paint.isFakeBoldText = true
+                    }
                     canvas.drawText("${reg.temp2}${reg.unidadTemp}", 255f, currentY, paint)
+                    paint.color = Color.BLACK // Restaurar
+                    paint.isFakeBoldText = false
+
                     val comentarioLimpio = reg.comentarios.replace("\n", " ")
                     canvas.drawText(comentarioLimpio, 315f, currentY, paint)
+                    
                     paint.color = Color.LTGRAY
                     paint.strokeWidth = 0.5f
                     canvas.drawLine(marginStart, currentY + 6f, marginEnd, currentY + 6f, paint)
@@ -520,11 +543,13 @@ object PrintUtils {
 
     fun imprimirReporteDelDia(
         context: Context,
-        registros: List<TemperatureEntity>
+        registros: List<TemperatureEntity>,
+        tituloPersonalizado: String = "Reporte Diario de Temperaturas"
     ) {
         val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
         val hoy = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
-        val jobName = "Reporte_Temperaturas_$hoy"
+        val suffix = tituloPersonalizado.replace(" ", "_")
+        val jobName = "${suffix}_$hoy"
 
         printManager.print(jobName, object : PrintDocumentAdapter() {
             override fun onLayout(
@@ -565,7 +590,7 @@ object PrintUtils {
                     // Títulos (Solo en la primera página o en todas según prefieras)
                     paint.textSize = 18f
                     paint.isFakeBoldText = true
-                    canvas.drawText("Reporte Diario de Temperaturas", marginStart, currentY, paint)
+                    canvas.drawText(tituloPersonalizado, marginStart, currentY, paint)
                     
                     paint.textSize = 11f
                     paint.isFakeBoldText = false

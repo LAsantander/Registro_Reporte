@@ -45,6 +45,16 @@ interface UnitDao {
     @Query("DELETE FROM temperature_records WHERE id = :id")
     suspend fun deleteTemperatureById(id: Int)
 
+    // --- Operaciones para Reportes de Trabajo ---
+    @Insert
+    suspend fun insertWorkReport(report: WorkReportEntity)
+
+    @Query("SELECT * FROM work_reports WHERE placa = :placa ORDER BY id DESC")
+    suspend fun getWorkReportsByUnit(placa: String): List<WorkReportEntity>
+
+    @Query("SELECT * FROM work_reports ORDER BY id DESC LIMIT 10")
+    fun getRecentWorkReports(): Flow<List<WorkReportEntity>>
+
     // --- Operaciones de Respaldo (Backup) ---
     @Query("SELECT * FROM refrigerated_units")
     suspend fun getAllUnitsList(): List<UnitEntity>
@@ -52,9 +62,15 @@ interface UnitDao {
     @Query("SELECT * FROM temperature_records")
     suspend fun getAllTemperaturesList(): List<TemperatureEntity>
 
+    @Query("SELECT * FROM work_reports")
+    suspend fun getAllWorkReportsList(): List<WorkReportEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUnitsList(units: List<UnitEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTemperaturesList(temps: List<TemperatureEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertWorkReportsList(reports: List<WorkReportEntity>)
 }

@@ -24,6 +24,8 @@ fun SearchScreen(
     onNavigateToTemperature: () -> Unit,
     onNavigateToRegistry: () -> Unit,
     onNavigateToChecklist: () -> Unit,
+    onNavigateToWorkReport: () -> Unit,
+    onNavigateToWorkHistory: () -> Unit,
     onNavigateToHistory: () -> Unit
 ) {
     val context = LocalContext.current
@@ -123,6 +125,26 @@ fun SearchScreen(
             }
 
             Button(
+                onClick = onNavigateToWorkReport,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
+            ) {
+                Text("REPORTES DE TRABAJO", fontWeight = FontWeight.Bold)
+            }
+
+            Button(
+                onClick = onNavigateToWorkHistory,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
+            ) {
+                Text("HISTORIAL DE TRABAJOS", fontWeight = FontWeight.Bold)
+            }
+
+            Button(
                 onClick = onNavigateToHistory,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,6 +191,8 @@ fun SearchScreenPreview() {
             onNavigateToTemperature = {},
             onNavigateToRegistry = {},
             onNavigateToChecklist = {},
+            onNavigateToWorkReport = {},
+            onNavigateToWorkHistory = {},
             onNavigateToHistory = {}
         )
     }
