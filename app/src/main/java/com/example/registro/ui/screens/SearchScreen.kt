@@ -1,14 +1,24 @@
 package com.example.registro.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,6 +27,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import com.example.registro.ui.UnitViewModel
 import com.example.registro.ui.theme.RegistroTheme
+import com.example.registro.data.UserSettings
+
+data class MenuOption(
+    val title: String,
+    val icon: ImageVector,
+    val isVisible: Boolean,
+    val onClick: () -> Unit
+)
 
 @Composable
 fun SearchScreen(
@@ -40,6 +58,19 @@ fun SearchScreen(
     // Observar mensajes del ViewModel para las alertas
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
     val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+
+    // Observar configuraciones
+    val userSettings by (viewModel?.userSettings?.collectAsState() ?: remember { mutableStateOf(UserSettings()) })
+    var showSettingsDialog by remember { mutableStateOf(false) }
+
+    val menuOptions = listOf(
+        MenuOption("TOMA DE TEMPERATURA", Icons.Default.Thermostat, userSettings.showTemperature, onNavigateToTemperature),
+        MenuOption("REGISTRO DE UNIDAD", Icons.Default.DirectionsBus, userSettings.showRegistry, onNavigateToRegistry),
+        MenuOption("INSPECCIÓN TÉCNICA", Icons.Default.FactCheck, userSettings.showChecklist, onNavigateToChecklist),
+        MenuOption("REPORTES DE TRABAJO", Icons.Default.Build, userSettings.showWorkReport, onNavigateToWorkReport),
+        MenuOption("HISTORIAL DE TRABAJOS", Icons.Default.History, userSettings.showWorkHistory, onNavigateToWorkHistory),
+        MenuOption("HISTORIAL TEMPERATURAS", Icons.Default.DeviceThermostat, userSettings.showHistory, onNavigateToHistory)
+    ).filter { it.isVisible }
 
     // Mostrar Alerta si hay un error
     if (errorMessage != null) {
@@ -73,16 +104,24 @@ fun SearchScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF052A50)),
-        contentAlignment = Alignment.TopCenter
+            .background(Color(0xFF052A50))
     ) {
-        // Columna para organizar los botones verticalmente
+        // Icono de Configuración
+        IconButton(
+            onClick = { showSettingsDialog = true },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .padding(top = 24.dp)
+        ) {
+            Icon(Icons.Default.Settings, "Configuración", tint = Color.White)
+        }
+
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .padding(top = 80.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(top = 60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -90,83 +129,38 @@ fun SearchScreen(
                 color = Color.White,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Botones de navegación
-            Button(
-                onClick = onNavigateToTemperature,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
+            // Cuadrícula de opciones
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                Text("TOMA DE TEMPERATURA", fontWeight = FontWeight.Bold)
+                items(menuOptions) { option ->
+                    MenuCard(option)
+                }
             }
 
-            Button(
-                onClick = onNavigateToRegistry,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
-            ) {
-                Text("REGISTRO DE UNIDAD", fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onNavigateToChecklist,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
-            ) {
-                Text("INSPECCIÓN TÉCNICA", fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onNavigateToWorkReport,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
-            ) {
-                Text("REPORTES DE TRABAJO", fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onNavigateToWorkHistory,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
-            ) {
-                Text("HISTORIAL DE TRABAJOS", fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onNavigateToHistory,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE))
-            ) {
-                Text("HISTORIAL DE TEMPERATURAS", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Botones de Respaldo
+            // Botones de Respaldo al final
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
                     onClick = { viewModel?.exportarRespaldo(context) },
                     modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
+                    Icon(Icons.Default.FileUpload, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text("EXPORTAR", fontSize = 12.sp)
                 }
 
@@ -174,12 +168,110 @@ fun SearchScreen(
                     onClick = { importLauncher.launch("application/json") },
                     modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
+                    Icon(Icons.Default.FileDownload, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text("IMPORTAR", fontSize = 12.sp)
                 }
             }
         }
+    }
+
+    // Diálogo de Configuración
+    if (showSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSettingsDialog = false },
+            title = { Text("Configuración de Menú") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Selecciona las funciones que deseas ver:", fontSize = 14.sp)
+                    
+                    SettingToggle("Toma de Temperatura", userSettings.showTemperature) {
+                        viewModel?.updateShowTemperature(it)
+                    }
+                    SettingToggle("Registro de Unidad", userSettings.showRegistry) {
+                        viewModel?.updateShowRegistry(it)
+                    }
+                    SettingToggle("Inspección Técnica", userSettings.showChecklist) {
+                        viewModel?.updateShowChecklist(it)
+                    }
+                    SettingToggle("Reportes de Trabajo", userSettings.showWorkReport) {
+                        viewModel?.updateShowWorkReport(it)
+                    }
+                    SettingToggle("Historial de Trabajos", userSettings.showWorkHistory) {
+                        viewModel?.updateShowWorkHistory(it)
+                    }
+                    SettingToggle("Historial de Temperaturas", userSettings.showHistory) {
+                        viewModel?.updateShowHistory(it)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettingsDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun MenuCard(option: MenuOption) {
+    Card(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { option.onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFF52A8EE).copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = option.icon,
+                    contentDescription = null,
+                    tint = Color(0xFF52A8EE),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = option.title,
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                lineHeight = 16.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingToggle(label: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, modifier = Modifier.weight(1f))
+        Switch(checked = isChecked, onCheckedChange = onCheckedChange)
     }
 }
 

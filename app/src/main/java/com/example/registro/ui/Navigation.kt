@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.registro.data.AppDatabase
+import com.example.registro.data.SettingsRepository
 import com.example.registro.ui.screens.CheckListScreen
 import com.example.registro.ui.screens.HistoryScreen
 import com.example.registro.ui.screens.RegistryScreen
@@ -22,10 +23,11 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
     
-    // Inicializamos la base de datos y el ViewModel
+    // Inicializamos la base de datos, el repositorio de configuraciones y el ViewModel
     val database = AppDatabase.getDatabase(context)
+    val settingsRepository = SettingsRepository(context)
     val viewModel: UnitViewModel = viewModel(
-        factory = UnitViewModelFactory(database.unitDao())
+        factory = UnitViewModelFactory(database.unitDao(), settingsRepository)
     )
 
     NavHost(navController = navController, startDestination = "search") {

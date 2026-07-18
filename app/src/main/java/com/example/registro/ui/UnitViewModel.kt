@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.registro.data.UnitDao
 import com.example.registro.data.UnitEntity
+import com.example.registro.data.SettingsRepository
+import com.example.registro.data.UserSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -41,9 +43,24 @@ enum class Jornada(val nombre: String, val horaInicio: Int, val horaFin: Int) {
 
 /**
  * El ViewModel es el encargado de gestionar los datos para la interfaz de usuario.
- * Ahora incluye manejo de errores para alertas de duplicados.
+ * Ahora incluye manejo de errores para alertas de duplicados y gestión de configuraciones.
  */
-class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
+class UnitViewModel(
+    private val unitDao: UnitDao,
+    private val settingsRepository: SettingsRepository? = null
+) : ViewModel() {
+
+    // Observar las configuraciones de usuario
+    val userSettings: StateFlow<UserSettings> = settingsRepository?.userSettingsFlow
+        ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettings())
+        ?: MutableStateFlow(UserSettings())
+
+    fun updateShowTemperature(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowTemperature(show) }
+    fun updateShowRegistry(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowRegistry(show) }
+    fun updateShowChecklist(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowChecklist(show) }
+    fun updateShowWorkReport(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkReport(show) }
+    fun updateShowWorkHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkHistory(show) }
+    fun updateShowHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowHistory(show) }
 
     // Estado para manejar mensajes de error/alerta en la UI
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -374,11 +391,19 @@ class UnitViewModel(private val unitDao: UnitDao) : ViewModel() {
             try {
                 val backup = BackupUtils.importBackup(context, uri)
                 if (backup != null) {
-                    // Insertamos los datos en la base de datos (con estrategia REPLACE si ya existen)
-                    unitDao.insertUnitsList(backup.units)
-                    unitDao.insertTemperaturesList(backup.temperatures)
-                    unitDao.insertWorkReportsList(backup.workReports)
-                    _successMessage.value = "Respaldo importado con éxito. Se cargaron ${backup.units.size} unidades, ${backup.temperatures.size} registros de temperatura y ${backup.workReports.size} reportes de trabajo."
+                    // Preparamos los datos para la fusión: Reiniciamos IDs para evitar sobrescribir por ID local.
+                    // Las unidades se fusionarán o actualizarán basándose en su PLACA única.
+                    val unitsToInsert = backup.units.map { it.copy(id = 0) }
+                    
+                    // Los registros de temperatura y reportes se insertarán como registros nuevos (se sumarán al historial local).
+                    val tempsToInsert = backup.temperatures.map { it.copy(id = 0) }
+                    val workReportsToInsert = backup.workReports.map { it.copy(id = 0) }
+
+                    unitDao.insertUnitsList(unitsToInsert)
+                    unitDao.insertTemperaturesList(tempsToInsert)
+                    unitDao.insertWorkReportsList(workReportsToInsert)
+                    
+                    _successMessage.value = "Respaldo importado y fusionado con éxito. Se procesaron ${backup.units.size} unidades, ${backup.temperatures.size} registros de temperatura y ${backup.workReports.size} reportes de trabajo."
                 } else {
                     _errorMessage.value = "El archivo de respaldo no es válido o está dañado."
                 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -16,6 +17,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -170,6 +172,7 @@ fun WorkReportScreen(
                 value = descripcion, onValueChange = { descripcion = it },
                 label = { Text("Descripción del Trabajo", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
             )
 
@@ -178,6 +181,7 @@ fun WorkReportScreen(
                 value = tecnico, onValueChange = { tecnico = it },
                 label = { Text("Técnico Asignado", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
             )
 
@@ -185,8 +189,11 @@ fun WorkReportScreen(
                 value = repuestos, onValueChange = { repuestos = it },
                 label = { Text("Repuestos / Materiales", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Botón Guardar
             Button(
@@ -200,11 +207,12 @@ fun WorkReportScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE)),
                 enabled = placa.isNotBlank() && tipoTrabajo.isNotBlank() && descripcion.isNotBlank()
             ) {
-                Text("GUARDAR REPORTE", fontWeight = FontWeight.Bold)
+                Text("GUARDAR", fontWeight = FontWeight.Bold)
             }
 
             // Lista de reportes recientes (opcional, para visualización rápida)
             if (reportesRecientes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
                 Text("Reportes Recientes:", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 reportesRecientes.forEach { rep ->
                     Card(
