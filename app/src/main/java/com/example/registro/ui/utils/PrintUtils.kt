@@ -254,7 +254,7 @@ object PrintUtils {
                     val hora = reg.fechaHora.split(" ").getOrNull(1) ?: ""
                     canvas.drawText(hora, marginStart, currentY, paint)
                     canvas.drawText(reg.placa, 70f, currentY, paint)
-                    canvas.drawText(reg.numeroUnidad, 135f, currentY, paint)
+                    canvas.drawText(reg.numeroUnidad ?: "", 135f, currentY, paint)
 
                     // Dibujar Temp 1 (con color si es alerta)
                     if (reg.isTemp1Alert) {
@@ -624,7 +624,7 @@ object PrintUtils {
                         val hora = reg.fechaHora.split(" ").getOrNull(1) ?: ""
                         canvas.drawText(hora, marginStart, currentY, paint)
                         canvas.drawText(reg.placa, 70f, currentY, paint)
-                        canvas.drawText(reg.numeroUnidad, 135f, currentY, paint)
+                        canvas.drawText(reg.numeroUnidad ?: "", 135f, currentY, paint)
 
                         // Dibujar Temp 1 (con color si es alerta)
                         if (reg.isTemp1Alert) {

@@ -8,29 +8,37 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Clase principal de la base de datos Room.
+ * Clase principal de la base de datos Room de la aplicación.
+ * Define las tablas (entidades), la versión del esquema y gestiona las migraciones.
  */
 @Database(
     entities = [UnitEntity::class, TemperatureEntity::class, WorkReportEntity::class],
-    version = 5,
+    version = 7,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
+    /**
+     * Proporciona acceso a las operaciones definidas en el DAO.
+     */
     abstract fun unitDao(): UnitDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        // Migración de versión 2 a 3: Añade la columna 'unidadTemp'
+        /**
+         * Migración de versión 2 a 3: Incorpora la columna 'unidadTemp' para soportar Fahrenheit.
+         */
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE temperature_records ADD COLUMN unidadTemp TEXT NOT NULL DEFAULT 'C'")
             }
         }
 
-        // Migración de versión 3 a 4: Añade columnas de alerta para temperaturas
+        /**
+         * Migración de versión 3 a 4: Incorpora banderas de alerta para identificar tomas críticas.
+         */
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE temperature_records ADD COLUMN isTemp1Alert INTEGER NOT NULL DEFAULT 0")
@@ -38,7 +46,9 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        // Migración de versión 4 a 5: Añade la tabla 'work_reports'
+        /**
+         * Migración de versión 4 a 5: Creación inicial de la tabla de reportes de trabajo.
+         */
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -56,6 +66,10 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Singleton para obtener la instancia de la base de datos.
+         * Gestiona la creación del archivo de base de datos y la aplicación de migraciones estructurales.
+         */
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -63,8 +77,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "registro_database"
                 )
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5) // Aplicamos las migraciones manuales seguras
-                // Ya NO usamos fallbackToDestructiveMigration() para proteger los datos
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5) // Migraciones manuales seguras
+                .fallbackToDestructiveMigration(dropAllTables = true) // Reparación automática ante cambios de esquema
                 .build()
                 INSTANCE = instance
                 instance

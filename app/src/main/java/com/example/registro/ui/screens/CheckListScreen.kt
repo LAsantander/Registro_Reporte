@@ -184,7 +184,7 @@ fun CheckListScreen(
             val unidadEncontrada = viewModel.buscarUnidad(searchQuery)
             if (unidadEncontrada != null) {
                 placa = unidadEncontrada.placa
-                numeroUnidad = unidadEncontrada.numeroUnidad
+                numeroUnidad = unidadEncontrada.numeroUnidad ?: ""
                 modeloUnidad = "${unidadEncontrada.marca} ${unidadEncontrada.modelo}"
             }
         }

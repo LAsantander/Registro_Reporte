@@ -39,8 +39,13 @@ import com.example.registro.ui.utils.PrintUtils
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class) // Anotación para usar APIs experimentales de Material 3
-@Composable // Define que esta función es un componente de la interfaz de usuario
+/**
+ * Pantalla de Toma de Temperaturas.
+ * Permite registrar lecturas de temperatura para unidades técnicas,
+ * visualizar registros recientes y generar reportes impresos.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun TemperatureTakingScreen(
     viewModel: UnitViewModel? = null,
     onBackClick: () -> Unit = {}
@@ -227,7 +232,7 @@ fun TemperatureTakingScreen(
             val unidadEncontrada = viewModel.buscarUnidad(searchQuery)
             if (unidadEncontrada != null) {
                 vehicleId = unidadEncontrada.placa
-                numeroUnidad = unidadEncontrada.numeroUnidad
+                numeroUnidad = unidadEncontrada.numeroUnidad ?: ""
             }
         }
     }
@@ -328,7 +333,7 @@ fun TemperatureTakingScreen(
             OutlinedTextField(
                 value = numeroUnidad,
                 onValueChange = { numeroUnidad = it },
-                label = { Text("Numero de Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                label = { Text("Numero de Unidad (Opcional)", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
@@ -511,8 +516,8 @@ fun TemperatureTakingScreen(
                     disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
                     disabledContentColor = Color.White.copy(alpha = 0.5f)
                 ),
-                // Se habilita si Placa, Número de Unidad y Temperaturas están llenos
-                enabled = vehicleId.isNotBlank() && numeroUnidad.isNotBlank() && temp1.isNotBlank() && temp2.isNotBlank()
+                // Se habilita si Placa y Temperaturas están llenos
+                enabled = vehicleId.isNotBlank() && temp1.isNotBlank() && temp2.isNotBlank()
             ) {
                 Text(text = "GUARDAR", style = MaterialTheme.typography.titleMedium)
             }
@@ -581,7 +586,8 @@ fun TemperatureTakingScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("${reg.placa} - Unid: ${reg.numeroUnidad}", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                val unitText = reg.numeroUnidad ?: "Sin número"
+                                Text("${reg.placa} - Unid: $unitText", color = Color.White, fontWeight = FontWeight.SemiBold)
                                 Row {
                                     Text(
                                         text = "T1: ${reg.temp1}${reg.unidadTemp}", 

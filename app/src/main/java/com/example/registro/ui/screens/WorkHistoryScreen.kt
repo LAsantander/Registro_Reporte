@@ -20,6 +20,10 @@ import androidx.compose.ui.unit.sp
 import com.example.registro.ui.UnitViewModel
 import com.example.registro.ui.theme.RegistroTheme
 
+/**
+ * Pantalla de Historial de Trabajos.
+ * Muestra una bitácora detallada de todas las intervenciones realizadas a una unidad específica.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkHistoryScreen(
@@ -104,12 +108,30 @@ fun WorkHistoryScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(
-                                        text = report.tipoTrabajo,
-                                        color = Color(0xFF52A8EE),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
+                                    Column {
+                                        Text(
+                                            text = report.tipoTrabajo,
+                                            color = Color(0xFF52A8EE),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp
+                                        )
+                                        if (!report.ot.isNullOrBlank()) {
+                                            Text(
+                                                text = "OT: ${report.ot}",
+                                                color = Color(0xFF52A8EE).copy(alpha = 0.8f),
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        if (!report.modeloUnidad.isNullOrBlank()) {
+                                            Text(
+                                                text = "Modelo: ${report.modeloUnidad}",
+                                                color = Color.White.copy(alpha = 0.7f),
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Normal
+                                            )
+                                        }
+                                    }
                                     Text(
                                         text = report.fechaHora.split(" ")[0],
                                         color = Color.White.copy(alpha = 0.6f),

@@ -1,6 +1,7 @@
 package com.example.registro.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +27,11 @@ import androidx.compose.ui.unit.sp
 import com.example.registro.ui.UnitViewModel
 import com.example.registro.ui.theme.RegistroTheme
 
+/**
+ * Pantalla de Reporte de Trabajo.
+ * Permite documentar intervenciones técnicas, mantenimientos y reparaciones.
+ * Incluye funciones de autocompletado por placa y edición de reportes existentes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkReportScreen(
@@ -35,23 +42,24 @@ fun WorkReportScreen(
 
     var searchQuery by remember { mutableStateOf("") }
     var placa by remember { mutableStateOf("") }
-    var numeroUnidad by remember { mutableStateOf("") }
+    var ot by remember { mutableStateOf("") }
+    var modeloUnidad by remember { mutableStateOf("") }
     var tipoTrabajo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var tecnico by remember { mutableStateOf("") }
     var repuestos by remember { mutableStateOf("") }
+    var editingReportId by remember { mutableIntStateOf(0) }
 
     val reportesRecientes by (viewModel?.reportesTrabajoRecientes?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
     val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
 
-    // Lógica de búsqueda automática
     LaunchedEffect(searchQuery) {
         if (searchQuery.isNotBlank() && viewModel != null) {
             val unidadEncontrada = viewModel.buscarUnidad(searchQuery)
             if (unidadEncontrada != null) {
                 placa = unidadEncontrada.placa
-                numeroUnidad = unidadEncontrada.numeroUnidad
+                modeloUnidad = "${unidadEncontrada.marca} ${unidadEncontrada.modelo}".trim()
             }
         }
     }
@@ -133,8 +141,11 @@ fun WorkReportScreen(
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
 
-            // Datos Unidad (Placa y Número)
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Fila: Placa y OT
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 OutlinedTextField(
                     value = placa, onValueChange = { placa = it },
                     label = { Text("Placa", color = Color.White.copy(alpha = 0.7f)) },
@@ -142,12 +153,20 @@ fun WorkReportScreen(
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
                 )
                 OutlinedTextField(
-                    value = numeroUnidad, onValueChange = { numeroUnidad = it },
-                    label = { Text("Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                    value = ot, onValueChange = { ot = it },
+                    label = { Text("OT", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
                 )
             }
+
+            // Modelo de Unidad debajo
+            OutlinedTextField(
+                value = modeloUnidad, onValueChange = { modeloUnidad = it },
+                label = { Text("Modelo de Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
+            )
 
             // Tipo de Trabajo
             var expanded by remember { mutableStateOf(false) }
@@ -195,19 +214,49 @@ fun WorkReportScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Guardar
-            Button(
-                onClick = {
-                    viewModel?.guardarReporteTrabajo(placa, numeroUnidad, tipoTrabajo, descripcion, tecnico, repuestos) {
-                        searchQuery = ""; placa = ""; numeroUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
-                        focusRequester.requestFocus()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(0.6f).height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE)),
-                enabled = placa.isNotBlank() && tipoTrabajo.isNotBlank() && descripcion.isNotBlank()
+            // Botón Guardar / Actualizar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("GUARDAR", fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = {
+                        if (editingReportId == 0) {
+                            viewModel?.guardarReporteTrabajo(placa, ot, modeloUnidad, tipoTrabajo, descripcion, tecnico, repuestos) {
+                                searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
+                                editingReportId = 0
+                                focusRequester.requestFocus()
+                            }
+                        } else {
+                            viewModel?.actualizarReporteTrabajo(editingReportId, placa, ot, modeloUnidad, tipoTrabajo, descripcion, tecnico, repuestos) {
+                                searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
+                                editingReportId = 0
+                                focusRequester.requestFocus()
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(if (editingReportId == 0) 0.6f else 0.5f).height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE)),
+                    enabled = placa.isNotBlank() && tipoTrabajo.isNotBlank() && descripcion.isNotBlank()
+                ) {
+                    Text(if (editingReportId == 0) "GUARDAR" else "ACTUALIZAR", fontWeight = FontWeight.Bold)
+                }
+
+                if (editingReportId != 0) {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    OutlinedButton(
+                        onClick = {
+                            searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
+                            editingReportId = 0
+                        },
+                        modifier = Modifier.height(50.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                    ) {
+                        Text("CANCELAR")
+                    }
+                }
             }
 
             // Lista de reportes recientes (opcional, para visualización rápida)
@@ -216,13 +265,38 @@ fun WorkReportScreen(
                 Text("Reportes Recientes:", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 reportesRecientes.forEach { rep ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                editingReportId = rep.id
+                                placa = rep.placa
+                                ot = rep.ot
+                                modeloUnidad = rep.modeloUnidad ?: ""
+                                tipoTrabajo = rep.tipoTrabajo
+                                descripcion = rep.descripcion
+                                tecnico = rep.tecnico
+                                repuestos = rep.repuestos
+                            },
                         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("${rep.placa} - ${rep.tipoTrabajo}", color = Color.White, fontWeight = FontWeight.Bold)
-                            Text(rep.descripcion, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 2)
-                            Text("Fecha: ${rep.fechaHora}", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
+                        Box {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("${rep.placa} - ${rep.tipoTrabajo}", color = Color.White, fontWeight = FontWeight.Bold)
+                                    if (rep.ot.isNotBlank()) {
+                                        Text("OT: ${rep.ot}", color = Color(0xFF52A8EE), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Text(rep.descripcion, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 2)
+                                Text("Fecha: ${rep.fechaHora}", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
+                            }
+                            
+                            IconButton(
+                                onClick = { viewModel?.eliminarReporteTrabajo(rep.id) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFE57373).copy(alpha = 0.7f))
+                            }
                         }
                     }
                 }

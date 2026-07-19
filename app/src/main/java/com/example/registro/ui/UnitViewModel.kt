@@ -22,7 +22,8 @@ import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
 
 /**
- * Representa las jornadas de trabajo disponibles.
+ * Representa las jornadas de trabajo disponibles basadas en la hora del sistema.
+ * Ayuda a filtrar los reportes impresos o compartidos por turno.
  */
 enum class Jornada(val nombre: String, val horaInicio: Int, val horaFin: Int) {
     MANANA("Mañana", 6, 13),
@@ -30,6 +31,9 @@ enum class Jornada(val nombre: String, val horaInicio: Int, val horaFin: Int) {
     NOCHE("Noche", 22, 5);
 
     companion object {
+        /**
+         * Determina automáticamente en qué jornada se encuentra el sistema actualmente.
+         */
         fun obtenerActual(): Jornada {
             val horaActual = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             return when (horaActual) {
@@ -42,19 +46,22 @@ enum class Jornada(val nombre: String, val horaInicio: Int, val horaFin: Int) {
 }
 
 /**
- * El ViewModel es el encargado de gestionar los datos para la interfaz de usuario.
- * Ahora incluye manejo de errores para alertas de duplicados y gestión de configuraciones.
+ * El ViewModel central encargado de gestionar los datos para la interfaz de usuario.
+ * Actúa como puente entre el DAO (Room) y las pantallas de Jetpack Compose.
  */
 class UnitViewModel(
     private val unitDao: UnitDao,
     private val settingsRepository: SettingsRepository? = null
 ) : ViewModel() {
 
-    // Observar las configuraciones de usuario
+    /**
+     * Estado observable de las configuraciones de usuario (visibilidad de botones).
+     */
     val userSettings: StateFlow<UserSettings> = settingsRepository?.userSettingsFlow
         ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettings())
         ?: MutableStateFlow(UserSettings())
 
+    // Funciones rápidas para actualizar preferencias desde la UI
     fun updateShowTemperature(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowTemperature(show) }
     fun updateShowRegistry(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowRegistry(show) }
     fun updateShowChecklist(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowChecklist(show) }
@@ -62,30 +69,35 @@ class UnitViewModel(
     fun updateShowWorkHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkHistory(show) }
     fun updateShowHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowHistory(show) }
 
-    // Estado para manejar mensajes de error/alerta en la UI
+    // Estados para manejar mensajes de alerta y éxito en la UI
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
-    // Estado para manejar mensajes de éxito
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage
 
-    // Observar los últimos 5 registros de temperatura del día actual
+    /**
+     * Observar los últimos 5 registros de temperatura del día actual.
+     */
     val registrosRecientes: StateFlow<List<com.example.registro.data.TemperatureEntity>> = 
         unitDao.getRecentTemperatures(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()))
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Observar reportes de trabajo recientes
+    /**
+     * Observar los 10 reportes de trabajo globales más recientes.
+     */
     val reportesTrabajoRecientes: StateFlow<List<com.example.registro.data.WorkReportEntity>> = 
         unitDao.getRecentWorkReports()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Estado para el historial de trabajo filtrado por una unidad específica
+    /**
+     * Estado para el historial de trabajo filtrado por una unidad específica.
+     */
     private val _historialTrabajoFiltrado = MutableStateFlow<List<com.example.registro.data.WorkReportEntity>>(emptyList())
     val historialTrabajoFiltrado: StateFlow<List<com.example.registro.data.WorkReportEntity>> = _historialTrabajoFiltrado
 
     /**
-     * Función para insertar una nueva unidad con validación de duplicados.
+     * Registra una nueva unidad técnica con validación.
      */
     fun guardarUnidad(
         placa: String,
@@ -93,15 +105,15 @@ class UnitViewModel(
         marca: String,
         modelo: String,
         serie: String,
+        voltaje: String,
+        empresa: String,
         onSuccess: () -> Unit
     ) {
-        // Limpiamos mensajes previos
         _errorMessage.value = null
         _successMessage.value = null
 
-        // Validación básica
-        if (placa.isBlank() || numeroUnidad.isBlank() || marca.isBlank()) {
-            _errorMessage.value = "Por favor completa los campos obligatorios."
+        if (placa.isBlank()) {
+            _errorMessage.value = "Por favor ingresa al menos la Placa de la unidad."
             return
         }
 
@@ -109,23 +121,24 @@ class UnitViewModel(
             try {
                 val nuevaUnidad = UnitEntity(
                     placa = placa.uppercase().trim(),
-                    numeroUnidad = numeroUnidad.trim(),
+                    numeroUnidad = if (numeroUnidad.isBlank()) null else numeroUnidad.trim(),
                     marca = marca,
                     modelo = modelo,
-                    serie = serie
+                    serie = serie,
+                    voltaje = voltaje,
+                    empresa = empresa.trim()
                 )
                 unitDao.insertUnit(nuevaUnidad)
                 _successMessage.value = "Unidad registrada correctamente."
-                onSuccess() // Si todo sale bien
+                onSuccess()
             } catch (e: Exception) {
-                // Si Room lanza un error (como una violación de unicidad)
-                _errorMessage.value = "Error: La Placa o el Número de Unidad ya están registrados."
+                _errorMessage.value = "Error: La Placa ya está registrada en el sistema."
             }
         }
     }
 
     /**
-     * Función para actualizar una unidad existente.
+     * Actualiza la información de una unidad existente.
      */
     fun actualizarUnidad(
         id: Int,
@@ -134,13 +147,15 @@ class UnitViewModel(
         marca: String,
         modelo: String,
         serie: String,
+        voltaje: String,
+        empresa: String,
         onSuccess: () -> Unit
     ) {
         _errorMessage.value = null
         _successMessage.value = null
 
-        if (placa.isBlank() || numeroUnidad.isBlank() || marca.isBlank()) {
-            _errorMessage.value = "Por favor completa los campos obligatorios."
+        if (placa.isBlank()) {
+            _errorMessage.value = "La placa es obligatoria para actualizar."
             return
         }
 
@@ -149,29 +164,31 @@ class UnitViewModel(
                 val unidadActualizada = UnitEntity(
                     id = id,
                     placa = placa.uppercase().trim(),
-                    numeroUnidad = numeroUnidad.trim(),
+                    numeroUnidad = if (numeroUnidad.isBlank()) null else numeroUnidad.trim(),
                     marca = marca,
                     modelo = modelo,
-                    serie = serie
+                    serie = serie,
+                    voltaje = voltaje,
+                    empresa = empresa.trim()
                 )
                 unitDao.updateUnit(unidadActualizada)
                 _successMessage.value = "Datos de la unidad actualizados con éxito."
                 onSuccess()
             } catch (e: Exception) {
-                _errorMessage.value = "Error al actualizar: La Placa o el Número de Unidad ya existen."
+                _errorMessage.value = "Error al actualizar: Conflicto con los datos registrados."
             }
         }
     }
 
     /**
-     * Busca una unidad en la base de datos por placa o ID.
+     * Localiza una unidad por coincidencia exacta de placa o identificador de empresa.
      */
     suspend fun buscarUnidad(query: String): UnitEntity? {
         return unitDao.findUnitByPlacaOrId(query.uppercase().trim())
     }
 
     /**
-     * Guarda un registro de temperatura en la base de datos.
+     * Almacena una nueva toma de temperatura en la base de datos.
      */
     fun guardarTemperatura(
         placa: String,
@@ -187,8 +204,8 @@ class UnitViewModel(
         _errorMessage.value = null
         _successMessage.value = null
         
-        if (placa.isBlank() || numeroUnidad.isBlank() || temp1.isBlank() || temp2.isBlank()) {
-            _errorMessage.value = "Por favor completa todos los campos de temperatura."
+        if (placa.isBlank() || temp1.isBlank() || temp2.isBlank()) {
+            _errorMessage.value = "Por favor completa la Placa y las temperaturas."
             return
         }
 
@@ -196,7 +213,7 @@ class UnitViewModel(
             try {
                 val registro = com.example.registro.data.TemperatureEntity(
                     placa = placa.uppercase().trim(),
-                    numeroUnidad = numeroUnidad.trim(),
+                    numeroUnidad = if (numeroUnidad.isBlank()) null else numeroUnidad.trim(),
                     temp1 = temp1,
                     isTemp1Alert = isTemp1Alert,
                     temp2 = temp2,
@@ -214,14 +231,14 @@ class UnitViewModel(
     }
 
     /**
-     * Obtiene los registros de temperatura de una fecha específica.
+     * Recupera todos los registros de temperatura guardados en una fecha específica.
      */
     suspend fun obtenerRegistrosPorFecha(fecha: String): List<com.example.registro.data.TemperatureEntity> {
         return unitDao.getTemperaturesByDate(fecha.trim())
     }
 
     /**
-     * Obtiene los registros de temperatura del día actual.
+     * Recupera todos los registros de temperatura del día actual.
      */
     suspend fun obtenerRegistrosDelDia(): List<com.example.registro.data.TemperatureEntity> {
         val hoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
@@ -229,7 +246,7 @@ class UnitViewModel(
     }
 
     /**
-     * Filtra una lista de registros por una jornada específica.
+     * Filtra una lista de registros para que coincidan con una jornada laboral específica.
      */
     fun filtrarRegistrosPorJornada(
         registros: List<com.example.registro.data.TemperatureEntity>,
@@ -252,11 +269,12 @@ class UnitViewModel(
     }
 
     /**
-     * Guarda un reporte de trabajo.
+     * Crea un nuevo reporte de servicio técnico.
      */
     fun guardarReporteTrabajo(
         placa: String,
-        numeroUnidad: String,
+        ot: String,
+        modeloUnidad: String,
         tipoTrabajo: String,
         descripcion: String,
         tecnico: String,
@@ -266,8 +284,8 @@ class UnitViewModel(
         _errorMessage.value = null
         _successMessage.value = null
 
-        if (placa.isBlank() || numeroUnidad.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
-            _errorMessage.value = "Por favor completa los campos obligatorios del reporte."
+        if (placa.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
+            _errorMessage.value = "Por favor completa la Placa, el Tipo y la Descripción."
             return
         }
 
@@ -275,7 +293,8 @@ class UnitViewModel(
             try {
                 val reporte = com.example.registro.data.WorkReportEntity(
                     placa = placa.uppercase().trim(),
-                    numeroUnidad = numeroUnidad.trim(),
+                    ot = ot.trim(),
+                    modeloUnidad = if (modeloUnidad.isBlank()) null else modeloUnidad.trim(),
                     tipoTrabajo = tipoTrabajo,
                     descripcion = descripcion,
                     tecnico = tecnico,
@@ -300,6 +319,63 @@ class UnitViewModel(
     }
 
     /**
+     * Actualiza un reporte de trabajo que ya existe en la base de datos.
+     */
+    fun actualizarReporteTrabajo(
+        id: Int,
+        placa: String,
+        ot: String,
+        modeloUnidad: String,
+        tipoTrabajo: String,
+        descripcion: String,
+        tecnico: String,
+        repuestos: String,
+        onSuccess: () -> Unit
+    ) {
+        _errorMessage.value = null
+        _successMessage.value = null
+
+        if (placa.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
+            _errorMessage.value = "Por favor completa los campos obligatorios del reporte."
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val reporte = com.example.registro.data.WorkReportEntity(
+                    id = id,
+                    placa = placa.uppercase().trim(),
+                    ot = ot.trim(),
+                    modeloUnidad = if (modeloUnidad.isBlank()) null else modeloUnidad.trim(),
+                    tipoTrabajo = tipoTrabajo,
+                    descripcion = descripcion,
+                    tecnico = tecnico,
+                    repuestos = repuestos
+                )
+                unitDao.updateWorkReport(reporte)
+                _successMessage.value = "Reporte de trabajo actualizado con éxito."
+                onSuccess()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al actualizar el reporte: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Borra permanentemente un reporte de trabajo.
+     */
+    fun eliminarReporteTrabajo(id: Int) {
+        viewModelScope.launch {
+            try {
+                unitDao.deleteWorkReportById(id)
+                _successMessage.value = "Reporte eliminado correctamente."
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar el reporte: ${e.message}"
+            }
+        }
+    }
+
+    /**
      * Obtiene reportes de trabajo por placa.
      */
     suspend fun obtenerReportesPorUnidad(placa: String): List<com.example.registro.data.WorkReportEntity> {
@@ -307,7 +383,7 @@ class UnitViewModel(
     }
 
     /**
-     * Elimina un registro de temperatura por su ID.
+     * Borra permanentemente una toma de temperatura.
      */
     fun eliminarTemperatura(id: Int) {
         viewModelScope.launch {
@@ -321,26 +397,19 @@ class UnitViewModel(
     }
 
     /**
-     * Limpia los mensajes para cerrar las alertas.
+     * Cierra las ventanas de diálogo de alerta limpiando los mensajes de estado.
      */
     fun clearMessages() {
         _errorMessage.value = null
         _successMessage.value = null
     }
 
-    /**
-     * Limpia el mensaje de error para cerrar la alerta.
-     */
-    // --- Estado para Checklist ---
+    // --- Estado para Checklist (Temporal por sesión) ---
     private val _hallazgosChecklist = MutableStateFlow<List<Pair<String, List<Uri>>>>(emptyList())
     val hallazgosChecklist: StateFlow<List<Pair<String, List<Uri>>>> = _hallazgosChecklist
 
-    fun clearError() {
-        _errorMessage.value = null
-    }
-
     /**
-     * Guarda un hallazgo en la lista temporal de la sesión actual.
+     * Registra un nuevo hallazgo con comentario y fotos en la sesión actual de inspección.
      */
     fun guardarInspeccion(
         placa: String,
@@ -358,12 +427,18 @@ class UnitViewModel(
         }
     }
 
+    /**
+     * Limpia la memoria temporal de la inspección actual.
+     */
     fun limpiarSesionChecklist() {
         _hallazgosChecklist.value = emptyList()
     }
 
-    // --- Funciones de Respaldo ---
+    // --- Funciones de Respaldo (Persistencia Externa) ---
 
+    /**
+     * Agrupa todos los datos locales en un objeto BackupData y activa el menú de compartir.
+     */
     fun exportarRespaldo(context: Context) {
         viewModelScope.launch {
             try {
@@ -386,24 +461,47 @@ class UnitViewModel(
         }
     }
 
+    /**
+     * Procesa un archivo JSON seleccionado para fusionar sus datos con la base de datos local.
+     */
     fun importarRespaldo(context: Context, uri: Uri) {
         viewModelScope.launch {
             try {
                 val backup = BackupUtils.importBackup(context, uri)
                 if (backup != null) {
-                    // Preparamos los datos para la fusión: Reiniciamos IDs para evitar sobrescribir por ID local.
-                    // Las unidades se fusionarán o actualizarán basándose en su PLACA única.
-                    val unitsToInsert = backup.units.map { it.copy(id = 0) }
+                    // Reiniciamos IDs para asegurar la fusión de registros históricos
+                    val unitsToInsert = backup.units.map { oldUnit ->
+                        UnitEntity(
+                            id = 0,
+                            placa = oldUnit.placa,
+                            numeroUnidad = oldUnit.numeroUnidad,
+                            marca = oldUnit.marca ?: "",
+                            modelo = oldUnit.modelo ?: "",
+                            serie = oldUnit.serie ?: "",
+                            voltaje = oldUnit.voltaje ?: "",
+                            empresa = oldUnit.empresa ?: ""
+                        )
+                    }
                     
-                    // Los registros de temperatura y reportes se insertarán como registros nuevos (se sumarán al historial local).
-                    val tempsToInsert = backup.temperatures.map { it.copy(id = 0) }
-                    val workReportsToInsert = backup.workReports.map { it.copy(id = 0) }
+                    val tempsToInsert = backup.temperatures.map { oldTemp ->
+                        oldTemp.copy(
+                            id = 0,
+                            numeroUnidad = oldTemp.numeroUnidad
+                        )
+                    }
+                    val workReportsToInsert = backup.workReports.map { oldReport ->
+                        oldReport.copy(
+                            id = 0,
+                            ot = oldReport.ot ?: "",
+                            modeloUnidad = oldReport.modeloUnidad
+                        )
+                    }
 
                     unitDao.insertUnitsList(unitsToInsert)
                     unitDao.insertTemperaturesList(tempsToInsert)
                     unitDao.insertWorkReportsList(workReportsToInsert)
                     
-                    _successMessage.value = "Respaldo importado y fusionado con éxito. Se procesaron ${backup.units.size} unidades, ${backup.temperatures.size} registros de temperatura y ${backup.workReports.size} reportes de trabajo."
+                    _successMessage.value = "Respaldo importado y fusionado con éxito."
                 } else {
                     _errorMessage.value = "El archivo de respaldo no es válido o está dañado."
                 }

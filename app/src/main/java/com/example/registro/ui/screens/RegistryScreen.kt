@@ -3,6 +3,7 @@ package com.example.registro.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -16,12 +17,13 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.sp
 import com.example.registro.ui.UnitViewModel
 
 /**
- * Pantalla de Registro de Unidades.
- * Ahora integrada con el ViewModel para persistencia en Room y manejo de alertas de duplicados.
+ * Pantalla de Registro de Unidades Técnicas.
+ * Permite dar de alta nuevas unidades o editar la información técnica de las existentes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +39,8 @@ fun RegistryScreen(
     var marca by remember { mutableStateOf("") }
     var modelo by remember { mutableStateOf("") }
     var serie by remember { mutableStateOf("") }
+    var voltaje by remember { mutableStateOf("") }
+    var empresa by remember { mutableStateOf("") }
 
     // Lógica de búsqueda automática para edición
     LaunchedEffect(searchQuery) {
@@ -45,17 +49,19 @@ fun RegistryScreen(
             if (unidadEncontrada != null) {
                 id = unidadEncontrada.id
                 placa = unidadEncontrada.placa
-                numeroUnidad = unidadEncontrada.numeroUnidad
+                numeroUnidad = unidadEncontrada.numeroUnidad ?: ""
                 marca = unidadEncontrada.marca
                 modelo = unidadEncontrada.modelo
                 serie = unidadEncontrada.serie
+                voltaje = unidadEncontrada.voltaje
+                empresa = unidadEncontrada.empresa
             }
         }
     }
 
     // Estados para el menú desplegable
     var expanded by remember { mutableStateOf(false) }
-    val opcionesMarcas = listOf("Thermo King", "Carrier")
+    val opcionesMarcas = listOf("Thermo King", "Carrier", "SuperSnow", "Sino Clima", "Sino Frigo", "Thermal Master", "Hwasung Thermo")
 
     // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
@@ -180,7 +186,7 @@ fun RegistryScreen(
             OutlinedTextField(
                 value = numeroUnidad,
                 onValueChange = { numeroUnidad = it },
-                label = { Text("Número de Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                label = { Text("Número de Unidad (Opcional)", color = Color.White.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -258,6 +264,37 @@ fun RegistryScreen(
                 )
             )
 
+            //6 voltaje de funcionamiento de la unidad
+            OutlinedTextField(
+                value = voltaje,
+                onValueChange = { voltaje = it },
+                label = { Text("Voltaje de Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f)
+                )
+            )
+
+            // 7. Empresa
+            OutlinedTextField(
+                value = empresa,
+                onValueChange = { empresa = it },
+                label = { Text("Nombre de la Empresa", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f)
+                )
+            )
+
             Spacer(modifier = Modifier.height(14.dp))
 
             // Botón GUARDAR / ACTUALIZAR
@@ -270,9 +307,11 @@ fun RegistryScreen(
                             marca = marca,
                             modelo = modelo,
                             serie = serie,
+                            voltaje = voltaje,
+                            empresa = empresa,
                             onSuccess = {
                                 // Limpiar campos tras guardar
-                                id = 0; searchQuery = ""; placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""
+                                id = 0; searchQuery = ""; placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""; voltaje = ""; empresa = ""
                             }
                         )
                     } else {
@@ -283,17 +322,22 @@ fun RegistryScreen(
                             marca = marca,
                             modelo = modelo,
                             serie = serie,
+                            voltaje = voltaje,
+                            empresa = empresa,
                             onSuccess = {
                                 // Limpiar campos tras actualizar
-                                id = 0; searchQuery = ""; placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""
+                                id = 0; searchQuery = ""; placa = ""; numeroUnidad = ""; marca = ""; modelo = ""; serie = ""; voltaje = ""; empresa = ""
                             }
                         )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(0.7f).height(56.dp),
+                enabled = placa.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF52A8EE),
-                    contentColor = Color.White
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFF52A8EE).copy(alpha = 0.3f),
+                    disabledContentColor = Color.White.copy(alpha = 0.5f)
                 )
             ) {
                 Text(

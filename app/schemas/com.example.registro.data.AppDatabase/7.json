@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 5,
-    "identityHash": "95864423efbc3eb6d5dbfec45e045df7",
+    "version": 7,
+    "identityHash": "dfefce0f210454c7c94f29528454f2f2",
     "entities": [
       {
         "tableName": "refrigerated_units",
@@ -156,7 +156,7 @@
       },
       {
         "tableName": "work_reports",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `placa` TEXT NOT NULL, `modeloUnidad` TEXT, `tipoTrabajo` TEXT NOT NULL, `descripcion` TEXT NOT NULL, `tecnico` TEXT NOT NULL, `repuestos` TEXT NOT NULL, `fechaHora` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `placa` TEXT NOT NULL, `ot` TEXT NOT NULL, `modeloUnidad` TEXT, `tipoTrabajo` TEXT NOT NULL, `descripcion` TEXT NOT NULL, `tecnico` TEXT NOT NULL, `repuestos` TEXT NOT NULL, `fechaHora` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -167,6 +167,12 @@
           {
             "fieldPath": "placa",
             "columnName": "placa",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ot",
+            "columnName": "ot",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -216,7 +222,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '95864423efbc3eb6d5dbfec45e045df7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dfefce0f210454c7c94f29528454f2f2')"
     ]
   }
 }

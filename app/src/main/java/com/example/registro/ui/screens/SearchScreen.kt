@@ -29,6 +29,9 @@ import com.example.registro.ui.UnitViewModel
 import com.example.registro.ui.theme.RegistroTheme
 import com.example.registro.data.UserSettings
 
+/**
+ * Modelo que representa una opción interactiva en la cuadrícula del menú principal.
+ */
 data class MenuOption(
     val title: String,
     val icon: ImageVector,
@@ -36,6 +39,11 @@ data class MenuOption(
     val onClick: () -> Unit
 )
 
+/**
+ * Pantalla del Menú Principal (Dashboard).
+ * Permite la navegación a las diferentes funcionalidades de la app
+ * y la gestión de respaldos.
+ */
 @Composable
 fun SearchScreen(
     viewModel: UnitViewModel? = null,
@@ -217,6 +225,9 @@ fun SearchScreen(
     }
 }
 
+/**
+ * Tarjeta interactiva estilizada para las opciones del menú principal.
+ */
 @Composable
 fun MenuCard(option: MenuOption) {
     Card(
@@ -263,6 +274,9 @@ fun MenuCard(option: MenuOption) {
     }
 }
 
+/**
+ * Componente de fila con etiqueta e interruptor para el menú de configuración.
+ */
 @Composable
 fun SettingToggle(label: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(

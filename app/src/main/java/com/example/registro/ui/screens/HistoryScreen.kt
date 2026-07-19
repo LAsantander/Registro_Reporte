@@ -119,7 +119,7 @@ fun HistoryScreen(
                                 Text("Placa: ${registro.placa}", color = Color.White, fontWeight = FontWeight.Bold)
                                 Text(registro.fechaHora.split(" ").getOrNull(1) ?: "", color = Color.White.copy(0.7f))
                             }
-                            Text("Unidad: ${registro.numeroUnidad}", color = Color.White.copy(0.8f))
+                            Text("Unidad: ${registro.numeroUnidad ?: "Sin número"}", color = Color.White.copy(0.8f))
                             Text("T1: ${registro.temp1}° | T2: ${registro.temp2}°", color = Color.White)
                             if (registro.comentarios.isNotBlank()) {
                                 Text("Obs: ${registro.comentarios}", color = Color.White.copy(0.6f), fontSize = 12.sp)
