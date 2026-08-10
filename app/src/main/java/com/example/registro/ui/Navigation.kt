@@ -13,6 +13,7 @@ import com.example.registro.ui.screens.CheckListScreen
 import com.example.registro.ui.screens.HistoryScreen
 import com.example.registro.ui.screens.RegistryScreen
 import com.example.registro.ui.screens.SearchScreen
+import com.example.registro.ui.screens.TechnicianDataScreen
 import com.example.registro.ui.screens.TemperatureTakingScreen
 import com.example.registro.ui.screens.WorkHistoryScreen
 import com.example.registro.ui.screens.WorkReportScreen
@@ -39,7 +40,16 @@ fun AppNavigation() {
                 onNavigateToChecklist = { navController.navigate("checklist") },
                 onNavigateToWorkReport = { navController.navigate("work_report") },
                 onNavigateToWorkHistory = { navController.navigate("work_history") },
-                onNavigateToHistory = { navController.navigate("history") }
+                onNavigateToHistory = { navController.navigate("history") },
+                onNavigateToTechData = { navController.navigate("tech_data") }
+            )
+        }
+        
+        // Vista: Datos del Técnico (QR)
+        composable("tech_data") {
+            TechnicianDataScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
         
@@ -104,7 +114,8 @@ fun AppNavigationPreview() {
             onNavigateToChecklist = {},
             onNavigateToWorkReport = {},
             onNavigateToWorkHistory = {},
-            onNavigateToHistory = {}
+            onNavigateToHistory = {},
+            onNavigateToTechData = {}
         )
     }
 }

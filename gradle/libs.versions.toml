@@ -11,6 +11,7 @@ materialIconsExtended = "1.7.8"
 room = "2.7.0-alpha11"
 datastore = "1.1.2"
 gson = "2.11.0"
+zxing = "3.5.3"
 kotlin = "2.0.21"
 composeBom = "2026.02.01"
 coil = "2.6.0"
@@ -37,6 +38,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 [plugins]

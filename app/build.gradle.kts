@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
+    implementation(libs.zxing.core)
     
     // Room Database
     implementation(libs.androidx.room.runtime)

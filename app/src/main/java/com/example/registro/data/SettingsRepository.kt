@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -20,7 +21,14 @@ data class UserSettings(
     val showChecklist: Boolean = true,
     val showWorkReport: Boolean = true,
     val showWorkHistory: Boolean = true,
-    val showHistory: Boolean = true
+    val showHistory: Boolean = true,
+    val defaultTechnician: String = "",
+    val techCedula: String = "",
+    val techEmpresa: String = "",
+    val techDestino: String = "",
+    val techProfesion: String = "",
+    val techAsunto: String = "",
+    val techPlaca: String = ""
 )
 
 class SettingsRepository(private val context: Context) {
@@ -32,6 +40,13 @@ class SettingsRepository(private val context: Context) {
         val SHOW_WORK_REPORT = booleanPreferencesKey("show_work_report")
         val SHOW_WORK_HISTORY = booleanPreferencesKey("show_work_history")
         val SHOW_HISTORY = booleanPreferencesKey("show_history")
+        val DEFAULT_TECHNICIAN = stringPreferencesKey("default_technician")
+        val TECH_CEDULA = stringPreferencesKey("tech_cedula")
+        val TECH_EMPRESA = stringPreferencesKey("tech_empresa")
+        val TECH_DESTINO = stringPreferencesKey("tech_destino")
+        val TECH_PROFESION = stringPreferencesKey("tech_profesion")
+        val TECH_ASUNTO = stringPreferencesKey("tech_asunto")
+        val TECH_PLACA = stringPreferencesKey("tech_placa")
     }
 
     val userSettingsFlow: Flow<UserSettings> = context.dataStore.data
@@ -49,9 +64,42 @@ class SettingsRepository(private val context: Context) {
                 showChecklist = preferences[PreferencesKeys.SHOW_CHECKLIST] ?: true,
                 showWorkReport = preferences[PreferencesKeys.SHOW_WORK_REPORT] ?: true,
                 showWorkHistory = preferences[PreferencesKeys.SHOW_WORK_HISTORY] ?: true,
-                showHistory = preferences[PreferencesKeys.SHOW_HISTORY] ?: true
+                showHistory = preferences[PreferencesKeys.SHOW_HISTORY] ?: true,
+                defaultTechnician = preferences[PreferencesKeys.DEFAULT_TECHNICIAN] ?: "",
+                techCedula = preferences[PreferencesKeys.TECH_CEDULA] ?: "",
+                techEmpresa = preferences[PreferencesKeys.TECH_EMPRESA] ?: "",
+                techDestino = preferences[PreferencesKeys.TECH_DESTINO] ?: "",
+                techProfesion = preferences[PreferencesKeys.TECH_PROFESION] ?: "",
+                techAsunto = preferences[PreferencesKeys.TECH_ASUNTO] ?: "",
+                techPlaca = preferences[PreferencesKeys.TECH_PLACA] ?: ""
             )
         }
+
+    suspend fun updateTechnicianData(
+        nombre: String,
+        cedula: String,
+        empresa: String,
+        destino: String,
+        profesion: String,
+        asunto: String,
+        placa: String
+    ) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DEFAULT_TECHNICIAN] = nombre
+            preferences[PreferencesKeys.TECH_CEDULA] = cedula
+            preferences[PreferencesKeys.TECH_EMPRESA] = empresa
+            preferences[PreferencesKeys.TECH_DESTINO] = destino
+            preferences[PreferencesKeys.TECH_PROFESION] = profesion
+            preferences[PreferencesKeys.TECH_ASUNTO] = asunto
+            preferences[PreferencesKeys.TECH_PLACA] = placa
+        }
+    }
+
+    suspend fun updateDefaultTechnician(name: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DEFAULT_TECHNICIAN] = name
+        }
+    }
 
     suspend fun updateShowTemperature(show: Boolean) {
         context.dataStore.edit { preferences ->

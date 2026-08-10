@@ -68,6 +68,19 @@ class UnitViewModel(
     fun updateShowWorkReport(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkReport(show) }
     fun updateShowWorkHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkHistory(show) }
     fun updateShowHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowHistory(show) }
+    fun updateDefaultTechnician(name: String) = viewModelScope.launch { settingsRepository?.updateDefaultTechnician(name) }
+    
+    fun updateTechnicianData(
+        nombre: String,
+        cedula: String,
+        empresa: String,
+        destino: String,
+        profesion: String,
+        asunto: String,
+        placa: String
+    ) = viewModelScope.launch {
+        settingsRepository?.updateTechnicianData(nombre, cedula, empresa, destino, profesion, asunto, placa)
+    }
 
     // Estados para manejar mensajes de alerta y éxito en la UI
     private val _errorMessage = MutableStateFlow<String?>(null)

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.registro.ui.UnitViewModel
 import com.example.registro.ui.theme.RegistroTheme
+import com.example.registro.data.UserSettings
 
 /**
  * Pantalla de Reporte de Trabajo.
@@ -53,6 +54,16 @@ fun WorkReportScreen(
     val reportesRecientes by (viewModel?.reportesTrabajoRecientes?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
     val successMessage by (viewModel?.successMessage?.collectAsState() ?: remember { mutableStateOf(null) })
+
+    // Observar configuración del técnico predeterminado
+    val userSettings by (viewModel?.userSettings?.collectAsState() ?: remember { mutableStateOf(UserSettings()) })
+
+    // Inicializar el técnico con el valor predeterminado si el campo está vacío y no estamos editando
+    LaunchedEffect(userSettings.defaultTechnician, editingReportId) {
+        if (editingReportId == 0 && tecnico.isBlank()) {
+            tecnico = userSettings.defaultTechnician
+        }
+    }
 
     LaunchedEffect(searchQuery) {
         if (searchQuery.isNotBlank() && viewModel != null) {
@@ -224,13 +235,15 @@ fun WorkReportScreen(
                     onClick = {
                         if (editingReportId == 0) {
                             viewModel?.guardarReporteTrabajo(placa, ot, modeloUnidad, tipoTrabajo, descripcion, tecnico, repuestos) {
-                                searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
+                                searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; repuestos = ""
+                                tecnico = userSettings.defaultTechnician // Reset al técnico predeterminado
                                 editingReportId = 0
                                 focusRequester.requestFocus()
                             }
                         } else {
                             viewModel?.actualizarReporteTrabajo(editingReportId, placa, ot, modeloUnidad, tipoTrabajo, descripcion, tecnico, repuestos) {
-                                searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
+                                searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; repuestos = ""
+                                tecnico = userSettings.defaultTechnician // Reset al técnico predeterminado
                                 editingReportId = 0
                                 focusRequester.requestFocus()
                             }
@@ -247,7 +260,8 @@ fun WorkReportScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     OutlinedButton(
                         onClick = {
-                            searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; tecnico = ""; repuestos = ""
+                            searchQuery = ""; placa = ""; ot = ""; modeloUnidad = ""; tipoTrabajo = ""; descripcion = ""; repuestos = ""
+                            tecnico = userSettings.defaultTechnician // Reset al técnico predeterminado
                             editingReportId = 0
                         },
                         modifier = Modifier.height(50.dp),

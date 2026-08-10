@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,7 +54,8 @@ fun SearchScreen(
     onNavigateToChecklist: () -> Unit,
     onNavigateToWorkReport: () -> Unit,
     onNavigateToWorkHistory: () -> Unit,
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    onNavigateToTechData: () -> Unit
 ) {
     val context = LocalContext.current
     
@@ -77,7 +80,8 @@ fun SearchScreen(
         MenuOption("INSPECCIÓN TÉCNICA", Icons.Default.FactCheck, userSettings.showChecklist, onNavigateToChecklist),
         MenuOption("REPORTES DE TRABAJO", Icons.Default.Build, userSettings.showWorkReport, onNavigateToWorkReport),
         MenuOption("HISTORIAL DE TRABAJOS", Icons.Default.History, userSettings.showWorkHistory, onNavigateToWorkHistory),
-        MenuOption("HISTORIAL TEMPERATURAS", Icons.Default.DeviceThermostat, userSettings.showHistory, onNavigateToHistory)
+        MenuOption("HISTORIAL TEMPERATURAS", Icons.Default.DeviceThermostat, userSettings.showHistory, onNavigateToHistory),
+        MenuOption("DATOS DEL TÉCNICO", Icons.Default.Badge, true, onNavigateToTechData)
     ).filter { it.isVisible }
 
     // Mostrar Alerta si hay un error
@@ -189,6 +193,8 @@ fun SearchScreen(
 
     // Diálogo de Configuración
     if (showSettingsDialog) {
+        var localTechName by remember { mutableStateOf(userSettings.defaultTechnician) }
+
         AlertDialog(
             onDismissRequest = { showSettingsDialog = false },
             title = { Text("Configuración de Menú") },
@@ -214,6 +220,21 @@ fun SearchScreen(
                     SettingToggle("Historial de Temperaturas", userSettings.showHistory) {
                         viewModel?.updateShowHistory(it)
                     }
+
+                    HorizontalDivider(color = Color.Black.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                    
+                    Text("Configuración de Técnico:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = localTechName,
+                        onValueChange = { 
+                            localTechName = it
+                            viewModel?.updateDefaultTechnician(it) 
+                        },
+                        label = { Text("Nombre del Técnico (Predeterminado)", fontSize = 10.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
+                    )
                 }
             },
             confirmButton = {
@@ -299,7 +320,8 @@ fun SearchScreenPreview() {
             onNavigateToChecklist = {},
             onNavigateToWorkReport = {},
             onNavigateToWorkHistory = {},
-            onNavigateToHistory = {}
+            onNavigateToHistory = {},
+            onNavigateToTechData = {}
         )
     }
 }
