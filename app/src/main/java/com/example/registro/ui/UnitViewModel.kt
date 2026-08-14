@@ -61,6 +61,27 @@ class UnitViewModel(
         ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettings())
         ?: MutableStateFlow(UserSettings())
 
+    /**
+     * Flujo reactivo con las placas que coinciden con una búsqueda parcial.
+     */
+    private val _sugerenciasPlacas = MutableStateFlow<List<String>>(emptyList())
+    val sugerenciasPlacas: StateFlow<List<String>> = _sugerenciasPlacas
+
+    /**
+     * Actualiza la lista de sugerencias de placas basadas en un texto de búsqueda.
+     */
+    fun buscarSugerenciasPlacas(query: String) {
+        if (query.isBlank()) {
+            _sugerenciasPlacas.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            unitDao.searchByPlaca("%${query.uppercase()}%").collect { units ->
+                _sugerenciasPlacas.value = units.map { it.placa }
+            }
+        }
+    }
+    
     // Funciones rápidas para actualizar preferencias desde la UI
     fun updateShowTemperature(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowTemperature(show) }
     fun updateShowRegistry(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowRegistry(show) }
@@ -69,6 +90,7 @@ class UnitViewModel(
     fun updateShowWorkHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkHistory(show) }
     fun updateShowHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowHistory(show) }
     fun updateDefaultTechnician(name: String) = viewModelScope.launch { settingsRepository?.updateDefaultTechnician(name) }
+    fun updateOtOnlyNumbers(onlyNumbers: Boolean) = viewModelScope.launch { settingsRepository?.updateOtOnlyNumbers(onlyNumbers) }
     
     fun updateTechnicianData(
         nombre: String,
@@ -297,8 +319,8 @@ class UnitViewModel(
         _errorMessage.value = null
         _successMessage.value = null
 
-        if (placa.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
-            _errorMessage.value = "Por favor completa la Placa, el Tipo y la Descripción."
+        if (placa.isBlank() || ot.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
+            _errorMessage.value = "Por favor completa la Placa, OT, el Tipo y la Descripción."
             return
         }
 
@@ -348,8 +370,8 @@ class UnitViewModel(
         _errorMessage.value = null
         _successMessage.value = null
 
-        if (placa.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
-            _errorMessage.value = "Por favor completa los campos obligatorios del reporte."
+        if (placa.isBlank() || ot.isBlank() || tipoTrabajo.isBlank() || descripcion.isBlank()) {
+            _errorMessage.value = "Por favor completa los campos obligatorios (Placa, OT, Tipo, Descripción)."
             return
         }
 

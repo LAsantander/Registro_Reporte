@@ -59,9 +59,12 @@ fun RegistryScreen(
         }
     }
 
-    // Estados para el menú desplegable
-    var expanded by remember { mutableStateOf(false) }
+    // Estados para los menús desplegables
+    var expandedMarca by remember { mutableStateOf(false) }
     val opcionesMarcas = listOf("Thermo King", "Carrier", "SuperSnow", "Sino Clima", "Sino Frigo", "Thermal Master", "Hwasung Thermo")
+
+    var expandedVoltaje by remember { mutableStateOf(false) }
+    val opcionesVoltaje = listOf("12 voltios", "24 voltios", "Otro")
 
     // Observar mensajes del ViewModel
     val errorMessage by (viewModel?.errorMessage?.collectAsState() ?: remember { mutableStateOf(null) })
@@ -199,8 +202,8 @@ fun RegistryScreen(
 
             // 3. Marca (Dropdown)
             ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
+                expanded = expandedMarca,
+                onExpandedChange = { expandedMarca = !expandedMarca },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
@@ -208,7 +211,7 @@ fun RegistryScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Marca de Unidad", color = Color.White.copy(alpha = 0.7f)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMarca) },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -218,8 +221,8 @@ fun RegistryScreen(
                     )
                 )
                 ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
+                    expanded = expandedMarca,
+                    onDismissRequest = { expandedMarca = false },
                     modifier = Modifier.background(Color(0xFF052A50))
                 ) {
                     opcionesMarcas.forEach { opcion ->
@@ -227,7 +230,7 @@ fun RegistryScreen(
                             text = { Text(text = opcion, color = Color.White) },
                             onClick = {
                                 marca = opcion
-                                expanded = false
+                                expandedMarca = false
                             }
                         )
                     }
@@ -264,20 +267,42 @@ fun RegistryScreen(
                 )
             )
 
-            //6 voltaje de funcionamiento de la unidad
-            OutlinedTextField(
-                value = voltaje,
-                onValueChange = { voltaje = it },
-                label = { Text("Voltaje de Unidad", color = Color.White.copy(alpha = 0.7f)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f)
+            // 6. Voltaje (Dropdown)
+            ExposedDropdownMenuBox(
+                expanded = expandedVoltaje,
+                onExpandedChange = { expandedVoltaje = !expandedVoltaje },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = voltaje,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Voltaje de Unidad", color = Color.White.copy(alpha = 0.7f)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedVoltaje) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.5f)
+                    )
                 )
-            )
+                ExposedDropdownMenu(
+                    expanded = expandedVoltaje,
+                    onDismissRequest = { expandedVoltaje = false },
+                    modifier = Modifier.background(Color(0xFF052A50))
+                ) {
+                    opcionesVoltaje.forEach { opcion ->
+                        DropdownMenuItem(
+                            text = { Text(text = opcion, color = Color.White) },
+                            onClick = {
+                                voltaje = opcion
+                                expandedVoltaje = false
+                            }
+                        )
+                    }
+                }
+            }
 
             // 7. Empresa
             OutlinedTextField(

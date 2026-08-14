@@ -20,6 +20,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -167,6 +168,10 @@ fun WorkReportScreen(
                     value = ot, onValueChange = { ot = it },
                     label = { Text("OT", color = Color.White.copy(alpha = 0.7f)) },
                     modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = if (userSettings.otOnlyNumbers) KeyboardType.Number else KeyboardType.Text,
+                        capitalization = if (userSettings.otOnlyNumbers) KeyboardCapitalization.None else KeyboardCapitalization.Characters
+                    ),
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.White.copy(alpha = 0.5f))
                 )
             }
@@ -251,7 +256,7 @@ fun WorkReportScreen(
                     },
                     modifier = Modifier.fillMaxWidth(if (editingReportId == 0) 0.6f else 0.5f).height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A8EE)),
-                    enabled = placa.isNotBlank() && tipoTrabajo.isNotBlank() && descripcion.isNotBlank()
+                    enabled = placa.isNotBlank() && ot.isNotBlank() && tipoTrabajo.isNotBlank() && descripcion.isNotBlank()
                 ) {
                     Text(if (editingReportId == 0) "GUARDAR" else "ACTUALIZAR", fontWeight = FontWeight.Bold)
                 }

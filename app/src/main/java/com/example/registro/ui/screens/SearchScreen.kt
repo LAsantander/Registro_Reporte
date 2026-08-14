@@ -235,6 +235,12 @@ fun SearchScreen(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
                     )
+
+                    HorizontalDivider(color = Color.Black.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+
+                    SettingToggle("OT: Solo números", userSettings.otOnlyNumbers) {
+                        viewModel?.updateOtOnlyNumbers(it)
+                    }
                 }
             },
             confirmButton = {

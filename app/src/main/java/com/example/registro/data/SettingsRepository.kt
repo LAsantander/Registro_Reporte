@@ -28,7 +28,8 @@ data class UserSettings(
     val techDestino: String = "",
     val techProfesion: String = "",
     val techAsunto: String = "",
-    val techPlaca: String = ""
+    val techPlaca: String = "",
+    val otOnlyNumbers: Boolean = false
 )
 
 class SettingsRepository(private val context: Context) {
@@ -47,6 +48,7 @@ class SettingsRepository(private val context: Context) {
         val TECH_PROFESION = stringPreferencesKey("tech_profesion")
         val TECH_ASUNTO = stringPreferencesKey("tech_asunto")
         val TECH_PLACA = stringPreferencesKey("tech_placa")
+        val OT_ONLY_NUMBERS = booleanPreferencesKey("ot_only_numbers")
     }
 
     val userSettingsFlow: Flow<UserSettings> = context.dataStore.data
@@ -71,9 +73,16 @@ class SettingsRepository(private val context: Context) {
                 techDestino = preferences[PreferencesKeys.TECH_DESTINO] ?: "",
                 techProfesion = preferences[PreferencesKeys.TECH_PROFESION] ?: "",
                 techAsunto = preferences[PreferencesKeys.TECH_ASUNTO] ?: "",
-                techPlaca = preferences[PreferencesKeys.TECH_PLACA] ?: ""
+                techPlaca = preferences[PreferencesKeys.TECH_PLACA] ?: "",
+                otOnlyNumbers = preferences[PreferencesKeys.OT_ONLY_NUMBERS] ?: false
             )
         }
+
+    suspend fun updateOtOnlyNumbers(onlyNumbers: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.OT_ONLY_NUMBERS] = onlyNumbers
+        }
+    }
 
     suspend fun updateTechnicianData(
         nombre: String,

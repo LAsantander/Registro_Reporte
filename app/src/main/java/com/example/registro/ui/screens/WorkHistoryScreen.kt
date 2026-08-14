@@ -33,17 +33,22 @@ fun WorkHistoryScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val historial by viewModel.historialTrabajoFiltrado.collectAsState()
+    val sugerencias by viewModel.sugerenciasPlacas.collectAsState()
 
     // Búsqueda automática al escribir
     LaunchedEffect(searchQuery) {
         if (searchQuery.isNotBlank()) {
             viewModel.cargarHistorialPorPlaca(searchQuery)
+            viewModel.buscarSugerenciasPlacas(searchQuery)
+        } else {
+            viewModel.buscarSugerenciasPlacas("")
         }
     }
 
     WorkHistoryContent(
         searchQuery = searchQuery,
         onSearchQueryChange = { searchQuery = it },
+        sugerencias = sugerencias,
         historial = historial,
         onBackClick = onBackClick
     )
@@ -57,6 +62,7 @@ fun WorkHistoryScreen(
 fun WorkHistoryContent(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
+    sugerencias: List<String>,
     historial: List<WorkReportEntity>,
     onBackClick: () -> Unit
 ) {
@@ -86,7 +92,7 @@ fun WorkHistoryContent(
                 .padding(innerPadding)
                 .padding(horizontal = 24.dp)
         ) {
-            // Buscador
+            // Buscador de Placas
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
@@ -101,6 +107,26 @@ fun WorkHistoryContent(
                     cursorColor = Color.White, focusedLabelColor = Color.White, unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
                 )
             )
+
+            // Lista de sugerencias "Inline" (aparece solo si hay coincidencias y estamos escribiendo)
+            if (sugerencias.isNotEmpty() && searchQuery.isNotEmpty() && !sugerencias.contains(searchQuery.uppercase())) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0D47A1)),
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column {
+                        sugerencias.take(3).forEach { placa ->
+                            DropdownMenuItem(
+                                text = { Text(placa, color = Color.White, fontWeight = FontWeight.Bold) },
+                                onClick = { onSearchQueryChange(placa) }
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -200,6 +226,7 @@ fun WorkHistoryScreenPreview() {
         WorkHistoryContent(
             searchQuery = "ABC-123",
             onSearchQueryChange = {},
+            sugerencias = listOf("ABC-123", "ABC-456"),
             historial = listOf(
                 WorkReportEntity(
                     id = 1,
