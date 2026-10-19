@@ -22,6 +22,7 @@ data class UserSettings(
     val showWorkReport: Boolean = true,
     val showWorkHistory: Boolean = true,
     val showHistory: Boolean = true,
+    val showAlarmSearch: Boolean = true,
     val defaultTechnician: String = "",
     val techCedula: String = "",
     val techEmpresa: String = "",
@@ -41,6 +42,7 @@ class SettingsRepository(private val context: Context) {
         val SHOW_WORK_REPORT = booleanPreferencesKey("show_work_report")
         val SHOW_WORK_HISTORY = booleanPreferencesKey("show_work_history")
         val SHOW_HISTORY = booleanPreferencesKey("show_history")
+        val SHOW_ALARM_SEARCH = booleanPreferencesKey("show_alarm_search")
         val DEFAULT_TECHNICIAN = stringPreferencesKey("default_technician")
         val TECH_CEDULA = stringPreferencesKey("tech_cedula")
         val TECH_EMPRESA = stringPreferencesKey("tech_empresa")
@@ -67,6 +69,7 @@ class SettingsRepository(private val context: Context) {
                 showWorkReport = preferences[PreferencesKeys.SHOW_WORK_REPORT] ?: true,
                 showWorkHistory = preferences[PreferencesKeys.SHOW_WORK_HISTORY] ?: true,
                 showHistory = preferences[PreferencesKeys.SHOW_HISTORY] ?: true,
+                showAlarmSearch = preferences[PreferencesKeys.SHOW_ALARM_SEARCH] ?: true,
                 defaultTechnician = preferences[PreferencesKeys.DEFAULT_TECHNICIAN] ?: "",
                 techCedula = preferences[PreferencesKeys.TECH_CEDULA] ?: "",
                 techEmpresa = preferences[PreferencesKeys.TECH_EMPRESA] ?: "",
@@ -143,6 +146,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun updateShowHistory(show: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.SHOW_HISTORY] = show
+        }
+    }
+
+    suspend fun updateShowAlarmSearch(show: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SHOW_ALARM_SEARCH] = show
         }
     }
 }

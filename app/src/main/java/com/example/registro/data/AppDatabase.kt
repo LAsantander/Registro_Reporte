@@ -12,8 +12,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * Define las tablas (entidades), la versión del esquema y gestiona las migraciones.
  */
 @Database(
-    entities = [UnitEntity::class, TemperatureEntity::class, WorkReportEntity::class],
-    version = 7,
+    entities = [UnitEntity::class, TemperatureEntity::class, WorkReportEntity::class, AlarmEntity::class],
+    version = 8,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -67,6 +67,62 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
+         * Migración de versión 7 a 8: Creación inicial de la tabla de alarmas.
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `alarms` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `modelo` TEXT NOT NULL, 
+                        `codigoAlarma` TEXT NOT NULL, 
+                        `descripcion` TEXT NOT NULL, 
+                        `solucion` TEXT NOT NULL DEFAULT ''
+                    )
+                """.trimIndent())
+                insertDefaultAlarms(db)
+            }
+        }
+
+        /**
+         * Inserta las alarmas iniciales más comunes para Thermo King y Carrier.
+         */
+        private fun insertDefaultAlarms(db: SupportSQLiteDatabase) {
+            val defaultAlarms = listOf(
+                // Thermo King
+                Triple("Thermo King", "02", Pair("Comprobar el sensor del serpentín del evaporador ", " Este sensor no es ajustado y tampoco es necesario calibrarlo, El sensor esta situado en la placa del cabezal del serpentín del evaporador " )),
+                Triple("Thermo King", "03", Pair("Verificar sensor de temperatura de aire de retorno", "El sensor se encuentra en la corriente del aire de retorno. Se trata de un sensor ajustado.")),
+                Triple("Thermo King", "04", Pair("Verificar sensor de temperatura de aire de descarga", "El sensor se encuentra en la corriente del aire de descarga. Se trata de un sensor ajustado.")),
+                Triple("Thermo King", "05", Pair("Comprobar el sensor de temperatura ambiente", "Este sensor no es ajustado y tampoco es necesario calibrarlo, El sensor esta situado en la corriente de aire del condensador, detrás de la rejilla del condensador.")),
+                Triple("Thermo King", "06" +
+                        "" +
+                        "", Pair("Sensor de temperatura de aire de retorno en falla", "Reemplazar o calibrar el sensor de aire de retorno.")),
+                Triple("Thermo King", "17", Pair("El motor diésel no arrancó", "Comprobar combustible, batería, bomba y solenoide de pare.")),
+                Triple("Thermo King", "18", Pair("Alta temperatura de refrigerante del motor (Apagado)", "Revisar refrigerante, bomba de agua y faja de ventilación.")),
+                Triple("Thermo King", "20", Pair("El motor diésel no arrancó (Parada)", "Inspeccionar sistema de combustible, arranque y batería.")),
+                Triple("Thermo King", "26", Pair("Comprobar capacidad de refrigeración", "Verificar presiones de refrigerante y congelamiento de evaporador.")),
+                Triple("Thermo King", "35", Pair("Comprobar circuito de relé de marcha", "Verificar relés de la caja de control y fusibles.")),
+                Triple("Thermo King", "63", Pair("Parada por alta presión de condensación", "Limpiar serpentín condensador y comprobar ventilador.")),
+                Triple("Thermo King", "84", Pair("Nivel bajo de aceite de motor", "Comprobar nivel de aceite del motor diésel y buscar fugas.")),
+
+                // Carrier
+                Triple("Carrier", "A01", Pair("Baja presión de aceite del motor", "Revisar nivel de aceite, filtro y sensor de presión de aceite.")),
+                Triple("Carrier", "A02", Pair("Alta temperatura de refrigerante de motor", "Inspeccionar radiador, faja y líquido refrigerante.")),
+                Triple("Carrier", "A03", Pair("Nivel bajo de refrigerante", "Inspeccionar radiador y mangueras por posibles fugas.")),
+                Triple("Carrier", "A10", Pair("Alta presión de condensación / Descarga", "Limpiar serpentín de condensador y revisar motor del condensador.")),
+                Triple("Carrier", "A11", Pair("Baja presión de succión", "Revisar carga de refrigerante, filtro deshidratador y VXT.")),
+                Triple("Carrier", "A28", Pair("Falla en alternador o sistema de carga", "Comprobar correa de alternador, regulador y bornes de batería."))
+            )
+
+            for ((modelo, codigo, data) in defaultAlarms) {
+                db.execSQL(
+                    "INSERT OR IGNORE INTO `alarms` (`modelo`, `codigoAlarma`, `descripcion`, `solucion`) VALUES (?, ?, ?, ?)",
+                    arrayOf(modelo, codigo, data.first, data.second)
+                )
+            }
+        }
+
+        /**
          * Singleton para obtener la instancia de la base de datos.
          * Gestiona la creación del archivo de base de datos y la aplicación de migraciones estructurales.
          */
@@ -77,7 +133,13 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "registro_database"
                 )
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5) // Migraciones manuales seguras
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_7_8) // Migraciones manuales seguras
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        super.onCreate(db)
+                        insertDefaultAlarms(db)
+                    }
+                })
                 .fallbackToDestructiveMigration(dropAllTables = true) // Reparación automática ante cambios de esquema
                 .build()
                 INSTANCE = instance

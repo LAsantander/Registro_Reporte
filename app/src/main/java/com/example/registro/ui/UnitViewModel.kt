@@ -2,10 +2,12 @@ package com.example.registro.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.registro.data.AlarmEntity
 import com.example.registro.data.UnitDao
 import com.example.registro.data.UnitEntity
 import com.example.registro.data.SettingsRepository
 import com.example.registro.data.UserSettings
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -89,6 +91,7 @@ class UnitViewModel(
     fun updateShowWorkReport(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkReport(show) }
     fun updateShowWorkHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowWorkHistory(show) }
     fun updateShowHistory(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowHistory(show) }
+    fun updateShowAlarmSearch(show: Boolean) = viewModelScope.launch { settingsRepository?.updateShowAlarmSearch(show) }
     fun updateDefaultTechnician(name: String) = viewModelScope.launch { settingsRepository?.updateDefaultTechnician(name) }
     fun updateOtOnlyNumbers(onlyNumbers: Boolean) = viewModelScope.launch { settingsRepository?.updateOtOnlyNumbers(onlyNumbers) }
     
@@ -469,6 +472,108 @@ class UnitViewModel(
         _hallazgosChecklist.value = emptyList()
     }
 
+    // --- Operaciones de Alarmas ---
+
+    /**
+     * Modelos de unidad registrados en la base de datos de alarmas.
+     */
+    val alarmModels: StateFlow<List<String>> = unitDao.getAlarmModels()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _foundAlarm = MutableStateFlow<AlarmEntity?>(null)
+    val foundAlarm: StateFlow<AlarmEntity?> = _foundAlarm
+
+    private val _hasSearchedAlarm = MutableStateFlow(false)
+    val hasSearchedAlarm: StateFlow<Boolean> = _hasSearchedAlarm
+
+    /**
+     * Busca una alarma específica por modelo y número/código de alarma.
+     */
+    fun buscarAlarma(modelo: String, codigoAlarma: String) {
+        _errorMessage.value = null
+        if (modelo.isBlank()) {
+            _errorMessage.value = "Selecciona o ingresa un modelo de unidad."
+            return
+        }
+        if (codigoAlarma.isBlank()) {
+            _errorMessage.value = "Escribe el número de la alarma."
+            return
+        }
+
+        viewModelScope.launch {
+            _hasSearchedAlarm.value = true
+            val resultado = unitDao.findAlarmByModelAndCode(modelo.trim(), codigoAlarma.trim())
+            _foundAlarm.value = resultado
+            if (resultado == null) {
+                _errorMessage.value = "No se encontró la alarma '$codigoAlarma' para el modelo '$modelo'."
+            }
+        }
+    }
+
+    /**
+     * Reinicia el estado de búsqueda de alarma.
+     */
+    fun resetAlarmSearch() {
+        _foundAlarm.value = null
+        _hasSearchedAlarm.value = false
+    }
+
+    /**
+     * Obtiene las alarmas registradas para un modelo específico.
+     */
+    fun obtenerAlarmasPorModelo(modelo: String): Flow<List<AlarmEntity>> {
+        return unitDao.getAlarmsByModel(modelo.trim())
+    }
+
+    /**
+     * Registra o actualiza una alarma en la base de datos.
+     */
+    fun guardarAlarma(
+        modelo: String,
+        codigoAlarma: String,
+        descripcion: String,
+        solucion: String,
+        onSuccess: () -> Unit
+    ) {
+        _errorMessage.value = null
+        _successMessage.value = null
+
+        if (modelo.isBlank() || codigoAlarma.isBlank() || descripcion.isBlank()) {
+            _errorMessage.value = "Por favor completa el Modelo, Código y Descripción de la alarma."
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val nuevaAlarma = AlarmEntity(
+                    modelo = modelo.trim(),
+                    codigoAlarma = codigoAlarma.trim().uppercase(),
+                    descripcion = descripcion.trim(),
+                    solucion = solucion.trim()
+                )
+                unitDao.insertAlarm(nuevaAlarma)
+                _successMessage.value = "Alarma guardada correctamente en la base de datos."
+                onSuccess()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al guardar la alarma: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Elimina una alarma por su identificador.
+     */
+    fun eliminarAlarma(id: Int) {
+        viewModelScope.launch {
+            try {
+                unitDao.deleteAlarmById(id)
+                _successMessage.value = "Alarma eliminada."
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar alarma: ${e.message}"
+            }
+        }
+    }
+
     // --- Funciones de Respaldo (Persistencia Externa) ---
 
     /**
@@ -480,12 +585,14 @@ class UnitViewModel(
                 val units = unitDao.getAllUnitsList()
                 val temps = unitDao.getAllTemperaturesList()
                 val workReports = unitDao.getAllWorkReportsList()
+                val alarms = unitDao.getAllAlarmsList()
                 val hoy = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
                 
                 val backup = BackupData(
                     units = units,
                     temperatures = temps,
                     workReports = workReports,
+                    alarms = alarms,
                     exportDate = hoy
                 )
                 
@@ -531,10 +638,16 @@ class UnitViewModel(
                             modeloUnidad = oldReport.modeloUnidad
                         )
                     }
+                    val alarmsToInsert = backup.alarms.map { oldAlarm ->
+                        oldAlarm.copy(id = 0)
+                    }
 
                     unitDao.insertUnitsList(unitsToInsert)
                     unitDao.insertTemperaturesList(tempsToInsert)
                     unitDao.insertWorkReportsList(workReportsToInsert)
+                    if (alarmsToInsert.isNotEmpty()) {
+                        unitDao.insertAlarmsList(alarmsToInsert)
+                    }
                     
                     _successMessage.value = "Respaldo importado y fusionado con éxito."
                 } else {

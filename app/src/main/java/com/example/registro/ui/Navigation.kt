@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.registro.data.AppDatabase
 import com.example.registro.data.SettingsRepository
+import com.example.registro.ui.screens.AlarmSearchScreen
 import com.example.registro.ui.screens.CheckListScreen
 import com.example.registro.ui.screens.HistoryScreen
 import com.example.registro.ui.screens.RegistryScreen
@@ -41,10 +42,19 @@ fun AppNavigation() {
                 onNavigateToWorkReport = { navController.navigate("work_report") },
                 onNavigateToWorkHistory = { navController.navigate("work_history") },
                 onNavigateToHistory = { navController.navigate("history") },
+                onNavigateToAlarmSearch = { navController.navigate("alarm_search") },
                 onNavigateToTechData = { navController.navigate("tech_data") }
             )
         }
         
+        // Vista: Búsqueda de Alarmas por Modelo
+        composable("alarm_search") {
+            AlarmSearchScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
         // Vista: Datos del Técnico (QR)
         composable("tech_data") {
             TechnicianDataScreen(
@@ -115,6 +125,7 @@ fun AppNavigationPreview() {
             onNavigateToWorkReport = {},
             onNavigateToWorkHistory = {},
             onNavigateToHistory = {},
+            onNavigateToAlarmSearch = {},
             onNavigateToTechData = {}
         )
     }

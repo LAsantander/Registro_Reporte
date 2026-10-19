@@ -140,4 +140,54 @@ interface UnitDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWorkReportsList(reports: List<WorkReportEntity>)
+
+    // --- Operaciones para Alarmas ---
+
+    /**
+     * Registra o reemplaza una alarma.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAlarm(alarm: AlarmEntity)
+
+    /**
+     * Inserta masivamente una lista de alarmas (usado en Importar).
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAlarmsList(alarms: List<AlarmEntity>)
+
+    /**
+     * Obtiene los modelos de unidades distintos registrados en la tabla de alarmas.
+     */
+    @Query("SELECT DISTINCT modelo FROM alarms ORDER BY modelo ASC")
+    fun getAlarmModels(): Flow<List<String>>
+
+    /**
+     * Busca una alarma por su modelo de unidad y su código/número exacto.
+     */
+    @Query("SELECT * FROM alarms WHERE UPPER(modelo) = UPPER(:modelo) AND UPPER(codigoAlarma) = UPPER(:codigo) LIMIT 1")
+    suspend fun findAlarmByModelAndCode(modelo: String, codigo: String): AlarmEntity?
+
+    /**
+     * Obtiene todas las alarmas registradas para un modelo específico.
+     */
+    @Query("SELECT * FROM alarms WHERE UPPER(modelo) = UPPER(:modelo) ORDER BY codigoAlarma ASC")
+    fun getAlarmsByModel(modelo: String): Flow<List<AlarmEntity>>
+
+    /**
+     * Obtiene todas las alarmas de la base de datos agrupadas por modelo y código.
+     */
+    @Query("SELECT * FROM alarms ORDER BY modelo ASC, codigoAlarma ASC")
+    fun getAllAlarms(): Flow<List<AlarmEntity>>
+
+    /**
+     * Obtiene la lista plana de todas las alarmas para exportación/respaldo.
+     */
+    @Query("SELECT * FROM alarms")
+    suspend fun getAllAlarmsList(): List<AlarmEntity>
+
+    /**
+     * Elimina una alarma por su identificador.
+     */
+    @Query("DELETE FROM alarms WHERE id = :id")
+    suspend fun deleteAlarmById(id: Int)
 }

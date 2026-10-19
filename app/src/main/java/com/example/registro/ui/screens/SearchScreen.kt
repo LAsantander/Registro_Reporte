@@ -55,6 +55,7 @@ fun SearchScreen(
     onNavigateToWorkReport: () -> Unit,
     onNavigateToWorkHistory: () -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToAlarmSearch: () -> Unit = {},
     onNavigateToTechData: () -> Unit
 ) {
     val context = LocalContext.current
@@ -81,6 +82,7 @@ fun SearchScreen(
         MenuOption("REPORTES DE TRABAJO", Icons.Default.Build, userSettings.showWorkReport, onNavigateToWorkReport),
         MenuOption("HISTORIAL DE TRABAJOS", Icons.Default.History, userSettings.showWorkHistory, onNavigateToWorkHistory),
         MenuOption("HISTORIAL TEMPERATURAS", Icons.Default.DeviceThermostat, userSettings.showHistory, onNavigateToHistory),
+        MenuOption("BÚSQUEDA DE ALARMAS", Icons.Default.Warning, userSettings.showAlarmSearch, onNavigateToAlarmSearch),
         MenuOption("DATOS DEL TÉCNICO", Icons.Default.Badge, true, onNavigateToTechData)
     ).filter { it.isVisible }
 
@@ -220,6 +222,9 @@ fun SearchScreen(
                     SettingToggle("Historial de Temperaturas", userSettings.showHistory) {
                         viewModel?.updateShowHistory(it)
                     }
+                    SettingToggle("Búsqueda de Alarmas", userSettings.showAlarmSearch) {
+                        viewModel?.updateShowAlarmSearch(it)
+                    }
 
                     HorizontalDivider(color = Color.Black.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
                     
@@ -327,6 +332,7 @@ fun SearchScreenPreview() {
             onNavigateToWorkReport = {},
             onNavigateToWorkHistory = {},
             onNavigateToHistory = {},
+            onNavigateToAlarmSearch = {},
             onNavigateToTechData = {}
         )
     }
